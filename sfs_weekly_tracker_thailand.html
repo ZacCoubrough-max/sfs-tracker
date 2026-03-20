@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ship From Store — Thailand Weekly Tracker</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛒</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#F5F3EE;--surface:#FFFFFF;--surface2:#EDEAE3;
+    --border:#D8D4CC;--text:#1A1816;--muted:#7A7670;
+    --green:#0F6E56;--green-bg:#E1F5EE;
+    --blue:#185FA5;--blue-bg:#E6F1FB;
+    --amber:#854F0B;--amber-bg:#FAEEDA;
+    --red:#A32D2D;--red-bg:#FCEBEB;
+    --score-a:#0F6E56;--score-b:#185FA5;--score-c:#BA7517;--score-d:#A32D2D;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:2rem;}
+  header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);}
+  .header-left h1{font-size:28px;font-weight:700;letter-spacing:-0.5px;line-height:1.1;}
+  .header-left p{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);margin-top:6px;}
+  .header-right{display:flex;align-items:center;gap:10px;}
+  .week-count-badge{font-family:'DM Mono',monospace;font-size:11px;background:#854F0B;color:#fff;padding:6px 12px;border-radius:2px;letter-spacing:0.5px;}
+  .sync-indicator{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);display:none;align-items:center;gap:5px;}
+  .sync-indicator.visible{display:flex;}
+  .sync-dot{width:6px;height:6px;border-radius:50%;background:var(--amber);animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+  .db-status{font-family:'DM Mono',monospace;font-size:11px;padding:5px 10px;border-radius:2px;border:1px solid var(--border);background:var(--surface);color:var(--muted);}
+  .db-status.ok{border-color:var(--green);color:var(--green);background:var(--green-bg);}
+  .db-status.err{border-color:var(--red);color:var(--red);background:var(--red-bg);}
+  .top-bar{display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap;}
+  .btn{font-family:'DM Mono',monospace;font-size:11px;padding:7px 14px;border:1px solid var(--border);border-radius:2px;background:var(--surface);cursor:pointer;color:var(--text);transition:background 0.15s;white-space:nowrap;}
+  .btn:hover{background:var(--surface2);}
+  .btn-primary{background:var(--text);color:var(--bg);border-color:var(--text);}
+  .btn-primary:hover{opacity:0.85;background:var(--text);}
+  .btn-danger{color:var(--red);border-color:var(--red);}
+  .btn-danger:hover{background:var(--red-bg);}
+  #csv-input{display:none;}
+  .week-label-input{font-family:'DM Mono',monospace;font-size:11px;padding:7px 10px;border:1px solid var(--border);border-radius:2px;background:var(--surface);color:var(--text);outline:none;width:130px;}
+  .week-label-input:focus{border-color:var(--text);}
+  .week-label-input.exists{border-color:var(--amber);background:var(--amber-bg);}
+  .week-label-warn{font-family:'DM Mono',monospace;font-size:11px;color:var(--amber);display:none;}
+  .week-label-warn.visible{display:inline;}
+  .weeks-area{margin-bottom:1.5rem;}
+  .weeks-strip-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px;}
+  .weeks-strip-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-right:4px;white-space:nowrap;}
+  .week-chip{font-family:'DM Mono',monospace;font-size:11px;padding:5px 10px;border-radius:2px;border:1px solid var(--border);cursor:pointer;color:var(--muted);background:var(--surface);transition:all 0.1s;display:flex;align-items:center;gap:5px;user-select:none;}
+  .week-chip:hover{border-color:var(--text);color:var(--text);}
+  .week-chip.in-period-a{background:#1A1816;color:#F5F3EE;border-color:#1A1816;}
+  .week-chip.in-period-b{background:var(--surface2);color:var(--text);border-color:var(--border);border-style:dashed;}
+  .week-chip .del{opacity:0.35;font-size:12px;line-height:1;}
+  .week-chip .del:hover{opacity:1;}
+  .period-hint{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);line-height:1.6;}
+  .period-hint span{display:inline-flex;align-items:center;gap:5px;margin-right:14px;}
+  .swatch{display:inline-block;width:10px;height:10px;border-radius:1px;}
+  .mode-toggle{display:flex;}
+  .mode-btn{font-family:'DM Mono',monospace;font-size:10px;padding:4px 10px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--muted);transition:all 0.15s;}
+  .mode-btn:first-child{border-radius:2px 0 0 2px;}
+  .mode-btn:last-child{border-radius:0 2px 2px 0;border-left:none;}
+  .mode-btn.active{background:var(--text);color:var(--bg);border-color:var(--text);}
+  .tab-bar{display:flex;gap:0;margin-bottom:1.5rem;border-bottom:1px solid var(--border);}
+  .tab{font-family:'DM Mono',monospace;font-size:11px;padding:8px 16px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;background:none;border-top:none;border-left:none;border-right:none;}
+  .tab:hover{color:var(--text);}
+  .tab.active{color:var(--text);border-bottom-color:var(--text);font-weight:500;}
+  .tab-badge{display:inline-block;background:var(--red-bg);color:var(--red);border-radius:10px;font-size:9px;padding:1px 5px;margin-left:4px;font-weight:500;}
+  .layout{display:grid;grid-template-columns:260px 1fr;gap:1.5rem;align-items:start;}
+  .sidebar{display:flex;flex-direction:column;gap:1rem;}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1.25rem;}
+  .panel-title{font-size:10px;font-family:'DM Mono',monospace;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;}
+  .weight-row{margin-bottom:1rem;}
+  .weight-row:last-child{margin-bottom:0;}
+  .weight-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+  .weight-name{font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;}
+  .weight-val{font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:var(--text);min-width:48px;text-align:right;}
+  .tier-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block;}
+  input[type=range]{-webkit-appearance:none;width:100%;height:3px;background:var(--border);border-radius:2px;outline:none;cursor:pointer;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--text);cursor:pointer;}
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--text);cursor:pointer;border:none;}
+  .weight-total{font-family:'DM Mono',monospace;font-size:11px;padding:8px 10px;border-radius:3px;text-align:center;margin-top:0.5rem;background:var(--surface2);color:var(--muted);transition:background 0.2s,color 0.2s;}
+  .weight-total.ok{background:var(--green-bg);color:var(--green);}
+  .weight-total.bad{background:var(--red-bg);color:var(--red);}
+  .tier-d-label{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin-top:10px;display:flex;align-items:center;gap:6px;}
+  .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .summary-card{background:var(--surface2);border-radius:3px;padding:10px 12px;}
+  .summary-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:0.5px;margin-bottom:4px;}
+  .summary-value{font-size:18px;font-weight:700;color:var(--text);}
+  .summary-delta{font-family:'DM Mono',monospace;font-size:10px;margin-top:2px;}
+  .main-panel{background:var(--surface);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+  .toolbar{display:flex;align-items:center;gap:10px;padding:1rem 1.25rem;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .period-banner{padding:8px 1.25rem;border-bottom:1px solid var(--border);background:var(--surface2);font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);display:flex;gap:20px;flex-wrap:wrap;}
+  .period-banner strong{color:var(--text);}
+  .store-search{font-family:'DM Mono',monospace;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:2px;background:var(--bg);color:var(--text);outline:none;width:200px;}
+  .store-search:focus{border-color:var(--text);}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{padding:10px 12px;text-align:left;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;background:var(--surface);cursor:pointer;user-select:none;}
+  thead th:hover{color:var(--text);}
+  tbody tr{border-bottom:1px solid var(--border);transition:background 0.1s;cursor:pointer;}
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr:hover{background:var(--bg);}
+  td{padding:10px 12px;vertical-align:middle;}
+  .store-name{font-weight:600;font-size:13px;}
+  .store-id{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px;}
+  .metric{font-family:'DM Mono',monospace;font-size:12px;}
+  .tier-badge{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;padding:3px 8px;border-radius:2px;letter-spacing:0.5px;}
+  .tier-A{background:var(--green-bg);color:var(--green);}
+  .tier-B{background:var(--blue-bg);color:var(--blue);}
+  .tier-C{background:var(--amber-bg);color:var(--amber);}
+  .tier-D{background:var(--red-bg);color:var(--red);}
+  .delta{font-family:'DM Mono',monospace;font-size:11px;}
+  .delta-up{color:var(--green);}
+  .delta-dn{color:var(--red);}
+  .delta-flat{color:var(--muted);}
+  .rank-cell{display:flex;align-items:center;gap:6px;}
+  .score-bar-bg{width:50px;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;flex-shrink:0;display:inline-block;vertical-align:middle;margin-right:5px;}
+  .score-bar-fill{height:100%;border-radius:2px;}
+  .sort-indicator{margin-left:3px;opacity:0.35;font-size:10px;}
+  .sort-indicator.active{opacity:1;}
+  .alert-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;}
+  .alert-item:last-child{border-bottom:none;}
+  .alert-item:hover{background:var(--bg);}
+  .alert-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+  .alert-body{flex:1;}
+  .alert-store{font-weight:600;font-size:13px;}
+  .alert-msg{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin-top:2px;}
+  .alert-sev-high{border-left:3px solid var(--red);}
+  .alert-sev-med{border-left:3px solid var(--amber);}
+  .alert-sev-low{border-left:3px solid var(--blue);}
+  .movers-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+  .mover-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;}
+  .mover-item:last-child{border-bottom:none;}
+  .mover-rank{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);width:20px;flex-shrink:0;}
+  .mover-delta{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;min-width:44px;text-align:right;}
+  .chart-wrap-full{width:100%;height:220px;position:relative;min-height:220px;}
+  .drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.2);z-index:10;}
+  .drawer-overlay.open{display:block;}
+  .drawer{position:fixed;right:0;top:0;bottom:0;width:500px;background:var(--surface);border-left:1px solid var(--border);z-index:11;overflow-y:auto;padding:1.5rem;transform:translateX(100%);transition:transform 0.2s ease;}
+  .drawer.open{transform:translateX(0);}
+  .drawer-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem;}
+  .drawer-title{font-size:18px;font-weight:700;}
+  .drawer-id{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin-top:3px;}
+  .drawer-close{font-size:20px;cursor:pointer;color:var(--muted);background:none;border:none;line-height:1;padding:2px 6px;}
+  .drawer-close:hover{color:var(--text);}
+  .drawer-section-title{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;margin-top:1.5rem;}
+  .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .kpi-card{background:var(--surface2);border-radius:3px;padding:10px 12px;}
+  .kpi-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:3px;}
+  .kpi-val{font-size:18px;font-weight:700;}
+  .kpi-delta{font-family:'DM Mono',monospace;font-size:11px;margin-top:2px;}
+  .chart-wrap{width:100%;height:180px;position:relative;margin-bottom:1rem;}
+  .week-history-table{width:100%;font-size:12px;border-collapse:collapse;}
+  .week-history-table th{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--border);text-align:left;}
+  .week-history-table td{padding:7px 8px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:11px;}
+  .week-history-table tr:last-child td{border-bottom:none;}
+  .week-history-table tr.in-a td{background:rgba(26,24,22,0.04);}
+  .week-history-table tr.in-b td{background:rgba(26,24,22,0.02);}
+  .note-area{width:100%;font-family:'DM Mono',monospace;font-size:11px;padding:8px 10px;border:1px solid var(--border);border-radius:2px;background:var(--bg);color:var(--text);outline:none;resize:vertical;min-height:80px;line-height:1.6;}
+  .note-area:focus{border-color:var(--text);}
+  .note-saved{font-family:'DM Mono',monospace;font-size:10px;color:var(--green);margin-top:4px;display:none;}
+  .note-dot{width:6px;height:6px;border-radius:50%;background:var(--amber);display:inline-block;margin-left:4px;vertical-align:middle;}
+  .empty-state{text-align:center;padding:4rem 2rem;color:var(--muted);}
+  .empty-state h2{font-size:18px;font-weight:600;margin-bottom:8px;color:var(--text);}
+  .empty-state p{font-family:'DM Mono',monospace;font-size:12px;line-height:1.7;}
+  @media(max-width:900px){.layout{grid-template-columns:1fr;}body{padding:1rem;}.drawer{width:100%;}.movers-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-left">
+    <h1>Ship From Store<br>Weekly Tracker</h1>
+    <p>Thailand network — live shared data</p>
+  </div>
+  <div class="header-right">
+    <span class="sync-indicator" id="sync-indicator"><span class="sync-dot"></span>Syncing...</span>
+    <span class="db-status" id="db-status">Connecting...</span>
+    <div class="week-count-badge" id="week-count-badge">TH — 0 WEEKS</div>
+  </div>
+</header>
+
+<div class="top-bar">
+  <input type="text" class="week-label-input" id="week-label" placeholder="e.g. W12 2026" oninput="checkLabelExists()">
+  <span class="week-label-warn" id="week-label-warn">⚠ already exists — will overwrite</span>
+  <button class="btn btn-primary" onclick="document.getElementById('csv-input').click()">+ Upload week CSV</button>
+  <input type="file" id="csv-input" accept=".csv">
+  <span style="color:var(--border);font-size:18px;margin:0 2px">|</span>
+  <button class="btn" onclick="syncFromDB()">↻ Refresh</button>
+  <button class="btn" onclick="exportCSV()">↓ Export CSV</button>
+  <button class="btn btn-danger" onclick="clearAll()">Clear all data</button>
+</div>
+
+<div class="weeks-area">
+  <div class="weeks-strip-row" id="weeks-strip">
+    <span class="weeks-strip-label">Weeks:</span>
+    <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">Loading...</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <div class="period-hint" id="period-hint"></div>
+    <div class="mode-toggle" style="margin-left:auto">
+      <button class="mode-btn active" id="mode-single" onclick="setMode('single')">Single week</button>
+      <button class="mode-btn" id="mode-period" onclick="setMode('period')">Period compare</button>
+    </div>
+  </div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab active" onclick="switchTab('stores',event)">Stores</button>
+  <button class="tab" onclick="switchTab('health',event)">Network health</button>
+  <button class="tab" onclick="switchTab('movers',event)">Movers</button>
+  <button class="tab" onclick="switchTab('alerts',event)">Alerts <span class="tab-badge" id="alert-count" style="display:none">0</span></button>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="panel">
+      <div class="panel-title">Score weights</div>
+      <div class="weight-row"><div class="weight-label"><span class="weight-name">% Claimed orders</span><span class="weight-val" id="w1-val">35%</span></div><input type="range" min="0" max="60" value="35" step="5" id="w1"></div>
+      <div class="weight-row"><div class="weight-label"><span class="weight-name">Candidate reliability</span><span class="weight-val" id="w2-val">20%</span></div><input type="range" min="0" max="60" value="20" step="5" id="w2"></div>
+      <div class="weight-row"><div class="weight-label"><span class="weight-name">Speed (time vs window)</span><span class="weight-val" id="w3-val">25%</span></div><input type="range" min="0" max="60" value="25" step="5" id="w3"></div>
+      <div class="weight-row"><div class="weight-label"><span class="weight-name">Claimed orders / day</span><span class="weight-val" id="w4-val">20%</span></div><input type="range" min="0" max="60" value="20" step="5" id="w4"></div>
+      <div class="weight-total ok" id="weight-total">Total: 100% ✓</div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Tier thresholds</div>
+      <div class="weight-row"><div class="weight-label"><span class="weight-name"><span class="tier-dot" style="background:var(--score-a)"></span>A — High performer</span><span class="weight-val" id="ta-val">70+</span></div><input type="range" min="50" max="95" value="70" step="5" id="ta"></div>
+      <div class="weight-row"><div class="weight-label"><span class="weight-name"><span class="tier-dot" style="background:var(--score-b)"></span>B — On track</span><span class="weight-val" id="tb-val">50–69</span></div><input type="range" min="25" max="90" value="50" step="5" id="tb"></div>
+      <div class="weight-row" style="margin-bottom:0"><div class="weight-label"><span class="weight-name"><span class="tier-dot" style="background:var(--score-c)"></span>C — Needs attention</span><span class="weight-val" id="tc-val">30–49</span></div><input type="range" min="5" max="85" value="30" step="5" id="tc"></div>
+      <div class="tier-d-label"><span class="tier-dot" style="background:var(--score-d)"></span>D — below C threshold</div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Claimed target</div>
+      <div class="weight-row" style="margin-bottom:0">
+        <div class="weight-label">
+          <span class="weight-name">Minimum % claimed</span>
+          <span class="weight-val" id="ct-val">40%</span>
+        </div>
+        <input type="range" min="10" max="80" value="40" step="5" id="ct">
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:10px;line-height:1.6">
+        Stores below this threshold are flagged in the table and Alerts tab.
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Period summary</div>
+      <div class="summary-grid">
+        <div class="summary-card"><div class="summary-label">Stores</div><div class="summary-value" id="sum-stores">—</div></div>
+        <div class="summary-card"><div class="summary-label">Avg score</div><div class="summary-value" id="sum-avg">—</div><div class="summary-delta" id="sum-avg-d"></div></div>
+        <div class="summary-card"><div class="summary-label">Avg claimed</div><div class="summary-value" id="sum-claimed">—</div><div class="summary-delta" id="sum-claimed-d"></div></div>
+        <div class="summary-card"><div class="summary-label">Tier A stores</div><div class="summary-value" id="sum-a">—</div><div class="summary-delta" id="sum-a-d"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div id="tab-stores"><div id="main-content"><div class="empty-state"><h2>Loading...</h2><p>Connecting to database.</p></div></div></div>
+    <div id="tab-health">
+      <div class="panel" style="margin-bottom:1rem"><div class="panel-title">Network avg score — all weeks</div><div id="health-svg-wrap" style="padding:0.5rem 0"></div></div>
+
+    </div>
+    <div id="tab-movers"><div class="movers-grid"><div class="panel"><div class="panel-title" style="color:var(--green)">Most improved</div><div id="movers-up"></div></div><div class="panel"><div class="panel-title" style="color:var(--red)">Most declined</div><div id="movers-dn"></div></div></div></div>
+    <div id="tab-alerts"><div class="panel"><div class="panel-title">Active alerts</div><div id="alerts-list"><div class="empty-state" style="padding:2rem"><p>Load at least 2 weeks to enable alerts.</p></div></div></div></div>
+  </div>
+</div>
+
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div><div class="drawer-title" id="drawer-title"></div><div class="drawer-id" id="drawer-id"></div></div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div id="drawer-body"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ── Supabase config ───────────────────────────────────────────────────────────
+const SUPABASE_URL = 'https://tsggtrhnlozrblrwxugc.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzZ2d0cmhubG96cmJscnd4dWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5NjEyNzEsImV4cCI6MjA4OTUzNzI3MX0.msqeqQYWWOMeMSazMiAdO9PBi5xV6mOkYDWYkfUoo3Y';
+const COUNTRY = 'TH';
+const HEADERS = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let weeklyData = {}, notes = {};
+let mode = 'single', selectedWeeks = [], dragStart = null, isDragging = false;
+let activeTab = 'stores', sortCol = 'score', sortDir = -1, searchTerm = '';
+let drawerChart = null, openDrawerId = null;
+
+// ── DB helpers ────────────────────────────────────────────────────────────────
+function showSync(v) { document.getElementById('sync-indicator').classList.toggle('visible', v); }
+function setStatus(ok, msg) {
+  const el = document.getElementById('db-status');
+  el.textContent = msg; el.className = 'db-status ' + (ok ? 'ok' : 'err');
+}
+
+async function dbGet(table, filter) {
+  let url = `${SUPABASE_URL}/rest/v1/${table}?${filter}`;
+  const r = await fetch(url, { headers: HEADERS });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function dbInsert(table, rows) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: 'POST', headers: { ...HEADERS, 'Prefer': 'return=minimal' },
+    body: JSON.stringify(rows)
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+async function dbDelete(table, filter) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}`, {
+    method: 'DELETE', headers: HEADERS
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+async function dbUpsert(table, rows) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: 'POST', headers: { ...HEADERS, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify(rows)
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+// ── Sync from DB ──────────────────────────────────────────────────────────────
+async function syncFromDB() {
+  showSync(true);
+  try {
+    const rows = await dbGet('sfs_data', `country=eq.${COUNTRY}&select=week,store_id,store_name,reliability,claimed_pct,cpd,ttc,dur,speed_ratio&order=week.asc`);
+    weeklyData = {};
+    rows.forEach(r => {
+      if (!weeklyData[r.week]) weeklyData[r.week] = [];
+      weeklyData[r.week].push({ id: r.store_id, name: r.store_name, reliability: +r.reliability, claimed_pct: +r.claimed_pct, cpd: +r.cpd, ttc: +r.ttc, dur: +r.dur, speed_ratio: +r.speed_ratio });
+    });
+    const nrows = await dbGet('sfs_notes', `country=eq.${COUNTRY}&select=store_id,note&order=store_id.asc`);
+    notes = {};
+    nrows.forEach(r => { if (r.note) notes[r.store_id] = r.note; });
+    const wks = getWeekLabels();
+    if (wks.length && !selectedWeeks.length) selectedWeeks = [wks[wks.length - 1]];
+    selectedWeeks = selectedWeeks.filter(w => weeklyData[w]);
+    if (!selectedWeeks.length && wks.length) selectedWeeks = [wks[wks.length - 1]];
+    setStatus(true, 'Connected ✓');
+    renderAll();
+  } catch(e) {
+    setStatus(false, 'DB error');
+    document.getElementById('main-content').innerHTML = `<div class="empty-state"><h2>Could not connect</h2><p>${e.message}</p></div>`;
+  }
+  showSync(false);
+}
+
+// ── CSV parsing ───────────────────────────────────────────────────────────────
+function parseCSV(text) {
+  const lines = text.split('\n').filter(l => l.trim());
+  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g,'').replace(/^\uFEFF/,''));
+  const parsed = [];
+  for (let i = 1; i < lines.length; i++) {
+    const vals = lines[i].split(',').map(v => v.trim().replace(/"/g,''));
+    if (vals.length < 9) continue;
+    const obj = {}; headers.forEach((h, idx) => obj[h] = vals[idx]);
+    let reliability = parseFloat(obj['Candidate reliability']) || 0; if (reliability <= 1) reliability *= 100;
+    let claimed_pct = parseFloat(obj['% claimed orders (part)']) || 0; if (claimed_pct <= 1) claimed_pct *= 100;
+    const cpd = parseFloat(obj['Claimed orders (part) per day']) || 0;
+    const ttc = parseFloat(obj['Time to claim (h)']) || 0;
+    const dur = parseFloat(obj['Candidate duration (h)']) || 0;
+    const id = obj['Stock location id'] || obj['id'] || '';
+    const name = obj['Stock location name'] || obj['name'] || id;
+    if (!id) continue;
+    parsed.push({ id, name, reliability, claimed_pct, cpd, ttc, dur, speed_ratio: dur > 0 ? ttc/dur : 0 });
+  }
+  return parsed;
+}
+
+// ── Upload ────────────────────────────────────────────────────────────────────
+function checkLabelExists() {
+  const lbl = document.getElementById('week-label').value.trim(), exists = lbl && weeklyData.hasOwnProperty(lbl);
+  document.getElementById('week-label').classList.toggle('exists', exists);
+  document.getElementById('week-label-warn').classList.toggle('visible', exists);
+}
+function suggestNextLabel(label) {
+  const m = label.match(/^W(\d+)(\s+(\d{4}))?/i);
+  if (m) return 'W' + (parseInt(m[1])+1) + (m[3] ? ' '+m[3] : '');
+  const s = label.match(/^(.*)\((\d+)\)$/);
+  if (s) return s[1] + '(' + (parseInt(s[2])+1) + ')';
+  return label + ' (2)';
+}
+
+document.getElementById('csv-input').addEventListener('change', async function(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const label = document.getElementById('week-label').value.trim() || ('W' + new Date().toISOString().slice(0,10));
+  if (weeklyData.hasOwnProperty(label)) {
+    if (!confirm('"' + label + '" exists. Overwrite?')) { this.value = ''; return; }
+    // delete existing rows for this week
+    showSync(true);
+    try { await dbDelete('sfs_data', `country=eq.${COUNTRY}&week=eq.${encodeURIComponent(label)}`); }
+    catch(e) { alert('Failed to delete existing week: ' + e.message); showSync(false); this.value=''; return; }
+  }
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    const stores = parseCSV(ev.target.result);
+    if (!stores.length) { alert('Could not parse CSV.'); return; }
+    showSync(true);
+    try {
+      const rows = stores.map(s => ({ country: COUNTRY, week: label, store_id: s.id, store_name: s.name, reliability: s.reliability, claimed_pct: s.claimed_pct, cpd: s.cpd, ttc: s.ttc, dur: s.dur, speed_ratio: s.speed_ratio }));
+      await dbInsert('sfs_data', rows);
+      weeklyData[label] = stores;
+      selectedWeeks = [label];
+      document.getElementById('week-label').value = suggestNextLabel(label);
+      checkLabelExists();
+      renderAll();
+      setStatus(true, 'Saved ✓');
+    } catch(e) { alert('Failed to save: ' + e.message); }
+    showSync(false);
+  };
+  reader.readAsText(file); this.value = '';
+});
+
+// ── Delete week ───────────────────────────────────────────────────────────────
+async function deleteWeek(label, e) {
+  e.stopPropagation();
+  if (!confirm('Remove week "' + label + '"?')) return;
+  showSync(true);
+  try {
+    await dbDelete('sfs_data', `country=eq.${COUNTRY}&week=eq.${encodeURIComponent(label)}`);
+    delete weeklyData[label];
+    selectedWeeks = selectedWeeks.filter(w => w !== label);
+    if (!selectedWeeks.length) { const wks = getWeekLabels(); if (wks.length) selectedWeeks = [wks[wks.length-1]]; }
+    renderAll();
+  } catch(e) { alert('Delete failed: ' + e.message); }
+  showSync(false);
+}
+
+// ── Clear all ─────────────────────────────────────────────────────────────────
+async function clearAll() {
+  if (!confirm('Clear ALL ' + COUNTRY + ' data from the database? Cannot be undone.')) return;
+  showSync(true);
+  try {
+    await dbDelete('sfs_data', `country=eq.${COUNTRY}`);
+    await dbDelete('sfs_notes', `country=eq.${COUNTRY}`);
+    weeklyData = {}; notes = {}; selectedWeeks = [];
+    renderAll();
+    setStatus(true, 'Connected ✓');
+  } catch(e) { alert('Clear failed: ' + e.message); }
+  showSync(false);
+}
+
+// ── Save note ─────────────────────────────────────────────────────────────────
+async function saveNote(storeId) {
+  const val = document.getElementById('note-input').value;
+  notes[storeId] = val;
+  showSync(true);
+  try {
+    await dbUpsert('sfs_notes', [{ country: COUNTRY, store_id: storeId, note: val, updated_at: new Date().toISOString() }]);
+    const saved = document.getElementById('note-saved');
+    saved.style.display = 'inline'; setTimeout(() => saved.style.display = 'none', 2000);
+    renderAll();
+  } catch(e) { alert('Note save failed: ' + e.message); }
+  showSync(false);
+}
+
+// ── Weights & tiers ───────────────────────────────────────────────────────────
+function getWeights() { return { w1:+document.getElementById('w1').value, w2:+document.getElementById('w2').value, w3:+document.getElementById('w3').value, w4:+document.getElementById('w4').value }; }
+function getClaimedTarget() { return +document.getElementById('ct').value; }
+function getTierThresholds() { const ta=+document.getElementById('ta').value,tb=+document.getElementById('tb').value,tc=+document.getElementById('tc').value,b=Math.min(tb,ta-5),c=Math.min(tc,b-5); return{a:ta,b,c}; }
+function updateTierLabels() { const t=getTierThresholds(); document.getElementById('ta-val').textContent=t.a+'+'; document.getElementById('tb-val').textContent=t.b+'–'+(t.a-1); document.getElementById('tc-val').textContent=t.c+'–'+(t.b-1); }
+function getTier(score) { const t=getTierThresholds(); if(score>=t.a)return'A'; if(score>=t.b)return'B'; if(score>=t.c)return'C'; return'D'; }
+function scoreColor(score) { const t=getTierThresholds(); if(score>=t.a)return'var(--score-a)'; if(score>=t.b)return'var(--score-b)'; if(score>=t.c)return'var(--score-c)'; return'var(--score-d)'; }
+
+// ── Scoring ───────────────────────────────────────────────────────────────────
+function minMax(arr,key){const v=arr.map(s=>s[key]).filter(v=>!isNaN(v));return{min:Math.min(...v),max:Math.max(...v)};}
+function normalise(val,min,max,inv){if(max===min)return 50;const n=(val-min)/(max-min)*100;return inv?100-n:n;}
+function calcScores(stores){
+  const w=getWeights(),total=w.w1+w.w2+w.w3+w.w4||1;
+  const r={claimed_pct:minMax(stores,'claimed_pct'),reliability:minMax(stores,'reliability'),speed_ratio:minMax(stores,'speed_ratio'),cpd:minMax(stores,'cpd')};
+  return stores.map(s=>{const score=(normalise(s.claimed_pct,r.claimed_pct.min,r.claimed_pct.max,false)*w.w1+normalise(s.reliability,r.reliability.min,r.reliability.max,false)*w.w2+normalise(s.speed_ratio,r.speed_ratio.min,r.speed_ratio.max,true)*w.w3+normalise(s.cpd,r.cpd.min,r.cpd.max,false)*w.w4)/total;return{...s,score};});
+}
+function addRanks(scored){const sorted=[...scored].sort((a,b)=>b.score-a.score),rm={};sorted.forEach((s,i)=>rm[s.id]=i+1);return scored.map(s=>({...s,rank:rm[s.id]}));}
+function rescoreAll(){const res={};for(const[lbl,stores]of Object.entries(weeklyData))res[lbl]=addRanks(calcScores(stores));return res;}
+function averagePeriod(weekLabels,scoredWeeks){
+  const sm={};
+  weekLabels.forEach(w=>{const wk=scoredWeeks[w];if(!wk)return;wk.forEach(s=>{if(!sm[s.id])sm[s.id]={id:s.id,name:s.name,vals:[]};sm[s.id].vals.push(s);});});
+  const avg=Object.values(sm).map(e=>{const n=e.vals.length,mean=k=>e.vals.reduce((a,s)=>a+s[k],0)/n;return{id:e.id,name:e.name,score:mean('score'),claimed_pct:mean('claimed_pct'),reliability:mean('reliability'),speed_ratio:mean('speed_ratio'),cpd:mean('cpd'),rank:mean('rank')};});
+  avg.sort((a,b)=>b.score-a.score);avg.forEach((s,i)=>s.rank=i+1);return avg;
+}
+
+// ── Week management ───────────────────────────────────────────────────────────
+function getWeekLabels(){return Object.keys(weeklyData).sort();}
+function setMode(m){mode=m;document.getElementById('mode-single').classList.toggle('active',m==='single');document.getElementById('mode-period').classList.toggle('active',m==='period');if(m==='single'&&selectedWeeks.length>1)selectedWeeks=[selectedWeeks[selectedWeeks.length-1]];renderAll();}
+function chipClick(label,e){e.stopPropagation();if(mode==='single'){selectedWeeks=[label];}else{if(selectedWeeks.includes(label)){if(selectedWeeks.length>1)selectedWeeks=selectedWeeks.filter(w=>w!==label);}else{selectedWeeks=[...selectedWeeks,label].sort();}}renderAll();}
+function chipDragStart(label,e){if(mode!=='period')return;isDragging=true;dragStart=label;e.preventDefault();}
+function chipDragEnter(label){if(!isDragging||mode!=='period')return;const weeks=getWeekLabels(),i1=weeks.indexOf(dragStart),i2=weeks.indexOf(label),lo=Math.min(i1,i2),hi=Math.max(i1,i2);selectedWeeks=weeks.slice(lo,hi+1);renderWeeksStrip();}
+function chipDragEnd(){isDragging=false;dragStart=null;renderAll();}
+function getPriorPeriod(sel){const all=getWeekLabels(),n=sel.length,first=all.indexOf(sel[0]);if(first<n)return[];return all.slice(first-n,first);}
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(tab,event){
+  activeTab=tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  if(event&&event.target)event.target.classList.add('active');
+  ['stores','health','movers','alerts'].forEach(t=>{
+    const el=document.getElementById('tab-'+t);
+    if(t===tab){el.style.display='';el.style.visibility='visible';el.style.position='relative';}
+    else{el.style.display='none';el.style.visibility='hidden';el.style.position='absolute';}
+  });
+  if(tab==='health')setTimeout(renderHealthCharts,100);
+  if(tab==='movers')setTimeout(renderMovers,50);
+  if(tab==='alerts')setTimeout(renderAlerts,50);
+}
+
+// ── Alerts ────────────────────────────────────────────────────────────────────
+function computeAlerts(scoredWeeks){
+  const weeks=getWeekLabels(),alerts=[];if(weeks.length<2)return alerts;
+  const allIds=new Set();weeks.forEach(w=>scoredWeeks[w].forEach(s=>allIds.add(s.id)));
+  allIds.forEach(id=>{
+    const history=weeks.map(w=>{const s=scoredWeeks[w]&&scoredWeeks[w].find(x=>x.id===id);return s?{week:w,...s}:null;}).filter(Boolean);
+    if(history.length<2)return;
+    const name=history[0].name,latest=history[history.length-1],prev=history[history.length-2];
+    if(history.length>=3){const recent=history.slice(-3);if(recent.every(e=>getTier(e.score)==='D'))alerts.push({sev:'high',icon:'🔴',store:name,id,msg:'D-tier for '+history.filter(e=>getTier(e.score)==='D').length+' consecutive weeks'});}
+    const order={A:4,B:3,C:2,D:1},drop=order[getTier(prev.score)]-order[getTier(latest.score)];
+    if(drop>=2)alerts.push({sev:'high',icon:'🔴',store:name,id,msg:'Dropped '+drop+' tiers this week ('+getTier(prev.score)+'→'+getTier(latest.score)+')'});
+    else if(drop===1)alerts.push({sev:'med',icon:'🟡',store:name,id,msg:'Tier drop: '+getTier(prev.score)+' → '+getTier(latest.score)});
+    if(prev.score-latest.score>15&&drop===0)alerts.push({sev:'med',icon:'🟡',store:name,id,msg:'Score fell '+(prev.score-latest.score).toFixed(0)+' pts'});
+    const claimedFloor=getClaimedTarget();
+    if(latest.claimed_pct<claimedFloor)alerts.push({sev:'med',icon:'🟡',store:name,id,msg:'% claimed below target: '+latest.claimed_pct.toFixed(1)+'% (target: '+claimedFloor+'%)'});
+    const rise=order[getTier(latest.score)]-order[getTier(prev.score)];
+    if(rise>=1)alerts.push({sev:'low',icon:'🟢',store:name,id,msg:'Tier improved: '+getTier(prev.score)+' → '+getTier(latest.score)});
+  });
+  const so={high:0,med:1,low:2};alerts.sort((a,b)=>so[a.sev]-so[b.sev]);return alerts;
+}
+function renderAlerts(){const sw=rescoreAll(),alerts=computeAlerts(sw),el=document.getElementById('alerts-list');if(!alerts.length){el.innerHTML='<div class="empty-state" style="padding:2rem"><p>No alerts. Load at least 2 weeks to enable detection.</p></div>';return;}el.innerHTML=alerts.map(a=>`<div class="alert-item alert-sev-${a.sev}" onclick="openDrawer('${a.id}')"><span class="alert-icon">${a.icon}</span><div class="alert-body"><div class="alert-store">${a.store}</div><div class="alert-msg">${a.msg}</div></div></div>`).join('');}
+function updateAlertBadge(sw){const alerts=computeAlerts(sw),count=alerts.filter(a=>a.sev!=='low').length,badge=document.getElementById('alert-count');if(count>0){badge.textContent=count;badge.style.display='inline';}else{badge.style.display='none';}}
+
+// ── Health charts ─────────────────────────────────────────────────────────────
+function renderHealthCharts(){
+  const sw=rescoreAll(), weeks=getWeekLabels();
+  if(weeks.length<1){
+    document.getElementById('tab-health').innerHTML='<div class="empty-state"><h2>Not enough data</h2><p>Load at least 2 weeks.</p></div>';return;
+  }
+
+  const avgScores=weeks.map(w=>{const s=sw[w];return s?+(s.reduce((a,x)=>a+x.score,0)/s.length).toFixed(1):0;});
+  const tc=weeks.map(w=>{const s=sw[w]||[],c={A:0,B:0,C:0,D:0};s.forEach(x=>c[getTier(x.score)]++);return c;});
+
+  // ── Headline movers ───────────────────────────────────────────────────────
+  let headlineHtml='';
+  if(weeks.length>=2){
+    const curr=sw[weeks[weeks.length-1]]||[], prev=sw[weeks[weeks.length-2]]||[];
+    let improved=0,declined=0,unchanged=0;
+    curr.forEach(s=>{
+      const p=prev.find(x=>x.id===s.id);
+      if(!p)return;
+      const d=s.score-p.score;
+      if(d>1)improved++;else if(d<-1)declined++;else unchanged++;
+    });
+    headlineHtml=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:1.25rem">
+      <div style="background:#E1F5EE;border-radius:3px;padding:12px 14px">
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:#0F6E56;letter-spacing:0.5px;margin-bottom:4px">Improved</div>
+        <div style="font-size:24px;font-weight:700;color:#0F6E56">${improved}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:#0F6E56">stores vs ${weeks[weeks.length-2]}</div>
+      </div>
+      <div style="background:#FCEBEB;border-radius:3px;padding:12px 14px">
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:#A32D2D;letter-spacing:0.5px;margin-bottom:4px">Declined</div>
+        <div style="font-size:24px;font-weight:700;color:#A32D2D">${declined}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:#A32D2D">stores vs ${weeks[weeks.length-2]}</div>
+      </div>
+      <div style="background:#EDEAE3;border-radius:3px;padding:12px 14px">
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:#7A7670;letter-spacing:0.5px;margin-bottom:4px">Unchanged</div>
+        <div style="font-size:24px;font-weight:700;color:#1A1816">${unchanged}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:#7A7670">stores vs ${weeks[weeks.length-2]}</div>
+      </div>
+    </div>`;
+  }
+
+  // ── Avg score SVG line chart ──────────────────────────────────────────────
+  const W=860,H=160,PL=40,PR=20,PT=20,PB=30;
+  const cW=W-PL-PR, cH=H-PT-PB;
+  const minS=Math.max(0,Math.min(...avgScores)-10), maxS=Math.min(100,Math.max(...avgScores)+10);
+  const xp=i=>PL+(weeks.length<2?cW/2:(i/(weeks.length-1))*cW);
+  const yp=v=>PT+cH-((v-minS)/(maxS-minS||1))*cH;
+  const ptColor=v=>{const t=getTier(v);return t==="A"?"#0F6E56":t==="B"?"#185FA5":t==="C"?"#BA7517":"#A32D2D";};
+  let polyline=avgScores.map((v,i)=>xp(i)+","+yp(v)).join(" ");
+  let hDots=avgScores.map((v,i)=>`<circle cx="${xp(i)}" cy="${yp(v)}" r="4" fill="${ptColor(v)}"/>`).join("");
+  let hLabels=weeks.map((w,i)=>`<text x="${xp(i)}" y="${H-4}" text-anchor="middle" font-family="DM Mono,monospace" font-size="10" fill="#7A7670">${w}</text>`).join("");
+  let hYLabels="";
+  for(let v=Math.ceil(minS/10)*10;v<=maxS;v+=10){
+    hYLabels+=`<text x="${PL-6}" y="${yp(v)+4}" text-anchor="end" font-family="DM Mono,monospace" font-size="9" fill="#7A7670">${v}</text>`;
+    hYLabels+=`<line x1="${PL}" y1="${yp(v)}" x2="${W-PR}" y2="${yp(v)}" stroke="#EDEAE3" stroke-width="1"/>`;
+  }
+  let hScoreLabels=avgScores.map((v,i)=>`<text x="${xp(i)}" y="${yp(v)-8}" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" font-weight="500" fill="${ptColor(v)}">${v}</text>`).join("");
+  const healthSVG=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
+    ${hYLabels}
+    <polyline points="${polyline}" fill="none" stroke="#1A1816" stroke-width="2" stroke-linejoin="round"/>
+    ${hDots}${hScoreLabels}${hLabels}
+  </svg>`;
+
+  document.getElementById('health-svg-wrap').innerHTML = headlineHtml + healthSVG;
+
+}
+
+function renderMovers(){
+  const sw=rescoreAll(),weeks=getWeekLabels();
+  if(weeks.length<2){document.getElementById('tab-movers').innerHTML='<div class="empty-state"><h2>Not enough data</h2><p>Load at least 2 weeks.</p></div>';return;}
+  const pp=mode==='period'?getPriorPeriod(selectedWeeks):[];
+  let curr,prev;
+  if(mode==='period'&&selectedWeeks.length>1&&pp.length){curr=averagePeriod(selectedWeeks,sw);prev=averagePeriod(pp,sw);}
+  else{
+    // Use selected week vs the one before it
+    const activeWk=selectedWeeks[selectedWeeks.length-1];
+    const allWks=getWeekLabels();
+    const idx=allWks.indexOf(activeWk);
+    curr=sw[activeWk]||[];
+    prev=idx>0?sw[allWks[idx-1]]||null:null;
+    if(!prev){
+      const noData='<p style="font-family:DM Mono,monospace;font-size:11px;color:var(--muted);padding:8px 0">No previous week to compare</p>';
+      if(document.getElementById('movers-up'))document.getElementById('movers-up').innerHTML=noData;
+      if(document.getElementById('movers-dn'))document.getElementById('movers-dn').innerHTML=noData;
+      return;
+    }
+  }
+  const deltas=curr.map(s=>{const p=prev.find(x=>x.id===s.id);return{...s,delta:p?s.score-p.score:0,prevTier:p?getTier(p.score):null};}).filter(s=>s.delta!==0);
+  deltas.sort((a,b)=>b.delta-a.delta);
+  const top5up=deltas.slice(0,5),top5dn=[...deltas].sort((a,b)=>a.delta-b.delta).slice(0,5);
+  const activeWkLabel = mode==='period' ? selectedWeeks[0]+' – '+selectedWeeks[selectedWeeks.length-1] : selectedWeeks[selectedWeeks.length-1];
+  const prevWkLabel = mode==='period' && getPriorPeriod(selectedWeeks).length ? getPriorPeriod(selectedWeeks)[0]+' – '+getPriorPeriod(selectedWeeks)[getPriorPeriod(selectedWeeks).length-1] : (()=>{const all=getWeekLabels(),idx=all.indexOf(selectedWeeks[selectedWeeks.length-1]);return idx>0?all[idx-1]:'';})();
+  const mr=(s,i)=>`<div class="mover-item" onclick="openDrawer('${s.id}')"><span class="mover-rank">${i+1}</span><div style="flex:1"><div class="store-name">${s.name}</div><div class="store-id">${s.id}${s.prevTier&&getTier(s.score)!==s.prevTier?' · '+s.prevTier+'→'+getTier(s.score):''}${notes[s.id]?'<span class="note-dot"></span>':''}</div></div><span class="mover-delta" style="color:${s.delta>0?'var(--green)':'var(--red)'}">${s.delta>0?'+':''}${s.delta.toFixed(1)}</span></div>`;
+  // Update panel subtitles with week context
+  document.querySelectorAll('#tab-movers .panel-title').forEach((el,i)=>{
+    el.innerHTML = (i===0?'<span style="color:var(--green)">Most improved</span>':'<span style="color:var(--red)">Most declined</span>') +
+      `<span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);font-weight:400;margin-left:8px">${activeWkLabel} vs ${prevWkLabel}</span>`;
+  });
+  document.getElementById('movers-up').innerHTML=top5up.length?top5up.map(mr).join(''):'<p style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--muted);padding:8px 0">No data</p>';
+  document.getElementById('movers-dn').innerHTML=top5dn.length?top5dn.map(mr).join(''):'<p style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--muted);padding:8px 0">No data</p>';
+}
+
+// ── Delta helpers ─────────────────────────────────────────────────────────────
+function renderDelta(d,suffix,decimals){if(d===null||d===undefined)return'<span class="delta delta-flat">—</span>';const val=d.toFixed(decimals!==undefined?decimals:1),sign=d>0?'+':'',cls=d>0.05?'delta-up':d<-0.05?'delta-dn':'delta-flat';return`<span class="delta ${cls}">${sign}${val}${suffix||''}</span>`;}
+function renderRankDelta(curr,prev){if(!prev)return'';const d=prev.rank-curr.rank;if(d>0)return`<span style="color:var(--green);font-size:11px;font-family:'DM Mono',monospace">▲${d}</span>`;if(d<0)return`<span style="color:var(--red);font-size:11px;font-family:'DM Mono',monospace">▼${Math.abs(d)}</span>`;return`<span style="color:var(--muted);font-size:11px;font-family:'DM Mono',monospace">—</span>`;}
+function renderTierChange(curr,prev){if(!prev||prev===curr)return'';const order={A:4,B:3,C:2,D:1},improved=order[curr]>order[prev];return`<span style="font-family:'DM Mono',monospace;font-size:10px;color:${improved?'var(--green)':'var(--red)'};margin-left:4px">${improved?'▲':'▼'}${prev}→${curr}</span>`;}
+function renderSparkline(id,sw){
+  const scores=getWeekLabels().map(w=>{const s=sw[w]&&sw[w].find(x=>x.id===id);return s?s.score:null;}).filter(v=>v!==null);
+  if(scores.length<2)return'<span style="font-size:10px;color:var(--muted);font-family:\'DM Mono\',monospace">—</span>';
+  const W=60,H=20,mn=Math.min(...scores),mx=Math.max(...scores),rng=mx-mn||1;
+  const pts=scores.map((v,i)=>((i/(scores.length-1))*W).toFixed(1)+','+(H-((v-mn)/rng)*H).toFixed(1)).join(' ');
+  const last=scores[scores.length-1],p2=scores[scores.length-2],col=last>p2+0.5?'#0F6E56':last<p2-0.5?'#A32D2D':'#7A7670';
+  return`<svg width="${W}" height="${H}" style="overflow:visible"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
+}
+
+// ── Weeks strip ───────────────────────────────────────────────────────────────
+function renderWeeksStrip(){
+  const weeks=getWeekLabels(),strip=document.getElementById('weeks-strip'),badge=document.getElementById('week-count-badge');
+  if(!weeks.length){strip.innerHTML='<span class="weeks-strip-label">Weeks:</span><span style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--muted)">No weeks loaded</span>';badge.textContent=COUNTRY+' — 0 WEEKS';return;}
+  badge.textContent=COUNTRY+' — '+weeks.length+' WEEK'+(weeks.length!==1?'S':'');
+  const pp=mode==='period'?getPriorPeriod(selectedWeeks):[];
+  let html='<span class="weeks-strip-label">Weeks:</span>';
+  weeks.forEach(w=>{const inA=selectedWeeks.includes(w),inB=pp.includes(w),cls=inA?'in-period-a':inB?'in-period-b':'';html+=`<div class="week-chip ${cls}" data-week="${w.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" data-action="chip"><span class="chip-lbl" style="pointer-events:none">${w}</span><span class="del" style="pointer-events:none" data-action="del">✕</span></div>`;});
+  strip.innerHTML=html;
+  const hint=document.getElementById('period-hint');
+  if(mode==='single'){hint.innerHTML='';}
+  else{const pp2=getPriorPeriod(selectedWeeks),aL=selectedWeeks.length===1?selectedWeeks[0]:selectedWeeks[0]+' → '+selectedWeeks[selectedWeeks.length-1],bL=pp2.length?(pp2[0]+(pp2.length>1?' → '+pp2[pp2.length-1]:'')):'(no prior period)';hint.innerHTML=`<span><span class="swatch" style="background:#1A1816"></span>Current: <strong style="color:var(--text)">${aL}</strong></span><span><span class="swatch" style="background:var(--surface2);border:1px dashed var(--border)"></span>Prior: <strong style="color:var(--text)">${bL}</strong></span><span style="color:var(--muted)">Click to toggle · drag to range-select</span>`;}
+}
+function updateWeightTotal(){const w=getWeights(),total=w.w1+w.w2+w.w3+w.w4,el=document.getElementById('weight-total');el.textContent='Total: '+total+'%'+(total===100?' ✓':' — needs to reach 100%');el.className='weight-total '+(total===100?'ok':'bad');}
+
+// ── Table ─────────────────────────────────────────────────────────────────────
+function renderTable(sw){
+  const pp=mode==='period'?getPriorPeriod(selectedWeeks):[],isPeriod=mode==='period'&&selectedWeeks.length>1;
+  let curr,prev=null,banner='';
+  if(isPeriod){
+    curr=averagePeriod(selectedWeeks,sw);if(pp.length)prev=averagePeriod(pp,sw);
+    banner=`Comparing <strong>${selectedWeeks[0]}${selectedWeeks.length>1?' – '+selectedWeeks[selectedWeeks.length-1]:''}</strong> (${selectedWeeks.length}w avg) vs prior <strong>${pp.length?(pp[0]+(pp.length>1?' – '+pp[pp.length-1]:'')):'no prior period'}</strong>`;
+    sortCol='score_delta';sortDir=-1;
+  } else {
+    const w=selectedWeeks[selectedWeeks.length-1];curr=sw[w]||[];
+    const all=getWeekLabels(),idx=all.indexOf(w);if(idx>0)prev=sw[all[idx-1]]||null;
+    banner=`Showing <strong>${w}</strong>`+(prev?` vs <strong>${all[idx-1]}</strong>`:'');
+    sortCol='score';sortDir=-1;
+  }
+  const swd=curr.map(s=>{const p=prev?prev.find(x=>x.id===s.id):null;return{...s,prev:p,score_delta:p?s.score-p.score:-999,claimed_delta:p?s.claimed_pct-p.claimed_pct:null,speed_delta:p?-(s.speed_ratio-p.speed_ratio):null,cpd_delta:p?s.cpd-p.cpd:null};});
+  let filtered=swd.filter(s=>!searchTerm||s.name.toLowerCase().includes(searchTerm.toLowerCase())||s.id.toLowerCase().includes(searchTerm.toLowerCase()));
+  filtered=[...filtered].sort((a,b)=>{let av=a[sortCol]!==undefined?a[sortCol]:0,bv=b[sortCol]!==undefined?b[sortCol]:0;return sortDir*(av>bv?1:av<bv?-1:0);});
+  const avgScore=curr.reduce((a,s)=>a+s.score,0)/curr.length,avgClaimed=curr.reduce((a,s)=>a+s.claimed_pct,0)/curr.length,tierACount=curr.filter(s=>getTier(s.score)==='A').length;
+  document.getElementById('sum-stores').textContent=curr.length;document.getElementById('sum-avg').textContent=avgScore.toFixed(0);document.getElementById('sum-claimed').textContent=avgClaimed.toFixed(1)+'%';document.getElementById('sum-a').textContent=tierACount;
+  if(prev){const ps=prev.reduce((a,s)=>a+s.score,0)/prev.length,pc=prev.reduce((a,s)=>a+s.claimed_pct,0)/prev.length,pa=prev.filter(s=>getTier(s.score)==='A').length;document.getElementById('sum-avg-d').innerHTML=renderDelta(avgScore-ps,'',1);document.getElementById('sum-claimed-d').innerHTML=renderDelta(avgClaimed-pc,'%');document.getElementById('sum-a-d').innerHTML=renderDelta(tierACount-pa,'',0);}
+  else{['sum-avg-d','sum-claimed-d','sum-a-d'].forEach(id=>document.getElementById(id).innerHTML='');}
+  const sa=col=>{const act=col===sortCol;return`<span class="sort-indicator ${act?'active':''}">${act?(sortDir===1?'↑':'↓'):''}</span>`;};
+  const rows=filtered.map(s=>{
+    const tier=getTier(s.score),pt=s.prev?getTier(s.prev.score):null,col=scoreColor(s.score),hasNote=notes[s.id]&&notes[s.id].trim().length>0;
+    const claimedTarget=getClaimedTarget(),belowTarget=s.claimed_pct<claimedTarget;
+    const claimedCell=belowTarget
+      ? `<span style="color:var(--red);font-family:'DM Mono',monospace;font-size:12px;font-weight:500">${s.claimed_pct.toFixed(1)}% ▼</span> <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--red)">below ${claimedTarget}%</span> ${renderDelta(s.claimed_delta,'%')}`
+      : `<span class="metric">${s.claimed_pct.toFixed(1)}%</span> ${renderDelta(s.claimed_delta,'%')}`;
+    return`<tr onclick="openDrawer('${s.id}')" style="${belowTarget?'background:rgba(163,45,45,0.03)':''}""><td><div class="rank-cell"><span class="metric">${s.rank}</span>${renderRankDelta(s,s.prev)}</div></td><td><div class="store-name">${s.name}${hasNote?'<span class="note-dot"></span>':''}</div><div class="store-id">${s.id}</div></td><td><div style="display:flex;align-items:center"><div class="score-bar-bg"><div class="score-bar-fill" style="width:${s.score.toFixed(0)}%;background:${col}"></div></div><span class="metric" style="color:${col}">${s.score.toFixed(0)}</span><span style="margin-left:4px">${renderDelta(s.prev?s.score-s.prev.score:null,'',1)}</span></div></td><td><span class="tier-badge tier-${tier}">${tier}</span>${renderTierChange(tier,pt)}</td><td>${claimedCell}</td><td class="metric">${s.reliability.toFixed(1)}%</td><td class="metric">${s.speed_ratio.toFixed(2)}x ${renderDelta(s.speed_delta,'x')}</td><td class="metric">${s.cpd.toFixed(1)} ${renderDelta(s.cpd_delta,'')}</td><td>${renderSparkline(s.id,sw)}</td></tr>`;
+  }).join('');
+  document.getElementById('main-content').innerHTML=`<div class="main-panel"><div class="period-banner">${banner}</div><div class="toolbar"><input type="text" class="store-search" placeholder="Search store..." value="${searchTerm}" oninput="doSearch(this.value)"></div><div style="overflow-x:auto"><table><thead><tr><th onclick="doSort('rank')">Rank ${sa('rank')}</th><th onclick="doSort('name')">Store ${sa('name')}</th><th onclick="doSort('score')">Score ${sa('score')}</th><th>Tier</th><th onclick="doSort('claimed_pct')">% Claimed ${sa('claimed_pct')}</th><th onclick="doSort('reliability')">Reliability ${sa('reliability')}</th><th onclick="doSort('speed_ratio')">Speed ratio ${sa('speed_ratio')}</th><th onclick="doSort('cpd')">Orders/day ${sa('cpd')}</th><th>Trend</th></tr></thead><tbody>${rows}</tbody></table></div></div><p style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:10px;line-height:1.7">Click any row for full history + notes.</p>`;
+}
+
+// ── Drawer ────────────────────────────────────────────────────────────────────
+function openDrawer(storeId){
+  openDrawerId=storeId;
+  const sw=rescoreAll(),weeks=getWeekLabels();
+  const all=weeks.map(w=>{const s=sw[w]&&sw[w].find(x=>x.id===storeId);return s?{week:w,...s}:null;}).filter(Boolean);
+  if(!all.length)return;
+  const latest=all[all.length-1],prev=all.length>1?all[all.length-2]:null;
+  const pp=mode==='period'?getPriorPeriod(selectedWeeks):[];
+  document.getElementById('drawer-title').textContent=latest.name;
+  document.getElementById('drawer-id').textContent=latest.id+' · '+all.length+' week'+(all.length!==1?'s':'')+' of data';
+  let periodSection='';
+  if(mode==='period'&&selectedWeeks.length>1){
+    const cv=selectedWeeks.map(w=>all.find(e=>e.week===w)).filter(Boolean),pv=pp.map(w=>all.find(e=>e.week===w)).filter(Boolean);
+    if(cv.length){const ao=(arr,k)=>arr.length?arr.reduce((a,e)=>a+e[k],0)/arr.length:null,cs=ao(cv,'score'),ps=ao(pv,'score'),cc=ao(cv,'claimed_pct'),pc=ao(pv,'claimed_pct'),ck=ao(cv,'cpd'),pk=ao(pv,'cpd'),csp=ao(cv,'speed_ratio'),psp=ao(pv,'speed_ratio');periodSection=`<div class="drawer-section-title">Period averages (${selectedWeeks.length} weeks)</div><div class="kpi-grid"><div class="kpi-card"><div class="kpi-label">Avg score</div><div class="kpi-val">${cs.toFixed(0)}</div><div class="kpi-delta">${renderDelta(ps!==null?cs-ps:null,'',1)}</div></div><div class="kpi-card"><div class="kpi-label">Avg % claimed</div><div class="kpi-val">${cc.toFixed(1)}%</div><div class="kpi-delta">${renderDelta(pc!==null?cc-pc:null,'%')}</div></div><div class="kpi-card"><div class="kpi-label">Avg orders/day</div><div class="kpi-val">${ck.toFixed(1)}</div><div class="kpi-delta">${renderDelta(pk!==null?ck-pk:null,'')}</div></div><div class="kpi-card"><div class="kpi-label">Avg speed ratio</div><div class="kpi-val">${csp.toFixed(2)}x</div><div class="kpi-delta">${renderDelta(psp!==null?-(csp-psp):null,'x')}</div></div></div>`;}
+  }
+  const kpis=[{label:'Score',val:latest.score.toFixed(0),delta:prev?latest.score-prev.score:null,suffix:'',dec:1},{label:'Rank',val:'#'+latest.rank,delta:prev?prev.rank-latest.rank:null,suffix:'',dec:0},{label:'% Claimed',val:latest.claimed_pct.toFixed(1)+'%',delta:prev?latest.claimed_pct-prev.claimed_pct:null,suffix:'%'},{label:'Speed ratio',val:latest.speed_ratio.toFixed(2)+'x',delta:prev?-(latest.speed_ratio-prev.speed_ratio):null,suffix:'x'},{label:'Orders/day',val:latest.cpd.toFixed(1),delta:prev?latest.cpd-prev.cpd:null,suffix:''},{label:'Reliability',val:latest.reliability.toFixed(1)+'%',delta:prev?latest.reliability-prev.reliability:null,suffix:'%'}];
+  const kpiHtml=kpis.map(k=>`<div class="kpi-card"><div class="kpi-label">${k.label}</div><div class="kpi-val">${k.val}</div><div class="kpi-delta">${renderDelta(k.delta,k.suffix,k.dec!==undefined?k.dec:1)}</div></div>`).join('');
+  const histRows=[...all].reverse().map((e,i)=>{const p=all[all.length-2-i],tier=getTier(e.score),pt=p?getTier(p.score):null,inA=selectedWeeks.includes(e.week),inB=pp.includes(e.week);return`<tr class="${inA?'in-a':inB?'in-b':''}"><td>${e.week}${inA?' ●':inB?' ○':''}</td><td>#${e.rank} ${p?renderRankDelta(e,p):''}</td><td>${e.score.toFixed(0)} ${p?renderDelta(e.score-p.score,'',1):''}</td><td><span class="tier-badge tier-${tier}" style="font-size:10px;padding:2px 6px">${tier}</span>${renderTierChange(tier,pt)}</td><td>${e.claimed_pct.toFixed(1)}%</td><td>${e.speed_ratio.toFixed(2)}x</td><td>${e.cpd.toFixed(1)}</td></tr>`;}).join('');
+  const cn=notes[storeId]||'';
+  document.getElementById('drawer-body').innerHTML=`${periodSection}<div class="drawer-section-title">Latest vs previous week</div><div class="kpi-grid">${kpiHtml}</div><div class="drawer-section-title">Score trend</div><div class="chart-wrap"><canvas id="drawer-chart"></canvas></div><div class="drawer-section-title">Notes & actions</div><textarea class="note-area" id="note-input" placeholder="Add notes, action items, follow-ups...">${cn}</textarea><div style="display:flex;align-items:center;gap:8px;margin-top:6px"><button class="btn btn-primary" onclick="saveNote('${storeId}')">Save note</button><span class="note-saved" id="note-saved">Saved ✓</span></div><div class="drawer-section-title">Full history</div><table class="week-history-table"><thead><tr><th>Week</th><th>Rank</th><th>Score</th><th>Tier</th><th>% Claimed</th><th>Speed</th><th>Ord/day</th></tr></thead><tbody>${histRows}</tbody></table><p style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:8px">● = current period &nbsp; ○ = prior period</p>`;
+  if(drawerChart){drawerChart.destroy();drawerChart=null;}
+  setTimeout(()=>{const ctx=document.getElementById('drawer-chart');if(!ctx)return;const sd=all.map(e=>parseFloat(e.score.toFixed(1))),ptc=sd.map(v=>{const t=getTier(v);return t==='A'?'#0F6E56':t==='B'?'#185FA5':t==='C'?'#BA7517':'#A32D2D';});drawerChart=new Chart(ctx,{type:'line',data:{labels:all.map(e=>e.week),datasets:[{data:sd,borderColor:'#1A1816',borderWidth:2,pointBackgroundColor:ptc,pointRadius:5,tension:0.3,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:100,grid:{color:'#EDEAE3'},ticks:{font:{family:'DM Mono',size:10},color:'#7A7670'}},x:{grid:{display:false},ticks:{font:{family:'DM Mono',size:10},color:'#7A7670'}}}}});},50);
+  document.getElementById('drawer').classList.add('open');document.getElementById('drawer-overlay').classList.add('open');
+}
+function closeDrawer(){openDrawerId=null;document.getElementById('drawer').classList.remove('open');document.getElementById('drawer-overlay').classList.remove('open');}
+
+// ── Sort / search ─────────────────────────────────────────────────────────────
+function doSort(col){if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=col==='rank'?1:-1;}renderAll();}
+function doSearch(val){searchTerm=val;renderAll();}
+
+// ── Export CSV ───────────────────────────────────────────────────────────────
+function exportCSV(){
+  const sw=rescoreAll();
+  const pp=mode==='period'?getPriorPeriod(selectedWeeks):[];
+  const isPeriod=mode==='period'&&selectedWeeks.length>1;
+  let curr,prev=null;
+  if(isPeriod){
+    curr=averagePeriod(selectedWeeks,sw);
+    if(pp.length)prev=averagePeriod(pp,sw);
+  } else {
+    const w=selectedWeeks[selectedWeeks.length-1];
+    curr=sw[w]||[];
+    const all=getWeekLabels(),idx=all.indexOf(w);
+    if(idx>0)prev=sw[all[idx-1]]||null;
+  }
+  const target=getClaimedTarget();
+  const headers=['Rank','Store ID','Store Name','Score','Score Delta','Tier','% Claimed','vs Target','Reliability','Speed Ratio','Orders/Day','Note'];
+  const rows=curr.map((s,i)=>{
+    const p=prev?prev.find(x=>x.id===s.id):null;
+    return [
+      s.rank,
+      s.id,
+      s.name,
+      s.score.toFixed(0),
+      p?(s.score-p.score>0?'+':'')+( s.score-p.score).toFixed(1):'—',
+      getTier(s.score),
+      s.claimed_pct.toFixed(1)+'%',
+      s.claimed_pct<target?'Below target':'On target',
+      s.reliability.toFixed(1)+'%',
+      s.speed_ratio.toFixed(2)+'x',
+      s.cpd.toFixed(1),
+      (notes[s.id]||'').replace(/,/g,';').replace(/[\r\n]+/g,' ')
+    ];
+  });
+  rows.sort((a,b)=>a[0]-b[0]);
+  const csv=[headers,...rows].map(r=>r.map(v=>'"'+v+'"').join(',')).join(String.fromCharCode(10));
+  const label=isPeriod?selectedWeeks[0]+'-'+selectedWeeks[selectedWeeks.length-1]:selectedWeeks[selectedWeeks.length-1];
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=`SFS_${COUNTRY}_${label}.csv`;
+  a.click();
+}
+
+// ── Main render ───────────────────────────────────────────────────────────────
+function renderAll(){
+  updateWeightTotal();updateTierLabels();renderWeeksStrip();
+  const weeks=getWeekLabels();
+  if(!weeks.length||!selectedWeeks.length){
+    document.getElementById('main-content').innerHTML='<div class="empty-state"><h2>No data yet</h2><p>Upload your first CSV using the button above.</p></div>';
+    ['sum-stores','sum-avg','sum-claimed','sum-a'].forEach(id=>document.getElementById(id).textContent='—');
+    ['sum-avg-d','sum-claimed-d','sum-a-d'].forEach(id=>document.getElementById(id).innerHTML='');
+    document.getElementById('alert-count').style.display='none';return;
+  }
+  selectedWeeks=selectedWeeks.filter(w=>weeklyData[w]);
+  if(!selectedWeeks.length)selectedWeeks=[weeks[weeks.length-1]];
+  const sw=rescoreAll();
+  if(activeTab==='stores')renderTable(sw);
+  else if(activeTab==='health')setTimeout(renderHealthCharts,100);
+  else if(activeTab==='movers')setTimeout(renderMovers,50);
+  else if(activeTab==='alerts')setTimeout(renderAlerts,50);
+  updateAlertBadge(sw);
+  if(openDrawerId)openDrawer(openDrawerId);
+}
+
+// ── Sliders ───────────────────────────────────────────────────────────────────
+['w1','w2','w3','w4'].forEach(id=>{const el=document.getElementById(id);el.addEventListener('input',()=>{document.getElementById(id+'-val').textContent=el.value+'%';renderAll();});});
+['ta','tb','tc'].forEach(id=>document.getElementById(id).addEventListener('input',renderAll));
+document.getElementById('ct').addEventListener('input',()=>{ document.getElementById('ct-val').textContent=document.getElementById('ct').value+'%'; renderAll(); });
+document.addEventListener('mouseup',()=>{if(isDragging)chipDragEnd();});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  // Hide non-active tabs on load
+  ['health','movers','alerts'].forEach(t=>{
+    const el=document.getElementById('tab-'+t);
+    if(el){el.style.display='none';el.style.visibility='hidden';el.style.position='absolute';}
+  });
+
+  // Permanent delegated listener — handles chip clicks even after innerHTML rebuild
+  const _strip = document.getElementById('weeks-strip');
+  _strip.addEventListener('click', function(e){
+    const chip = e.target.closest('[data-action="chip"]');
+    if(!chip) return;
+    const w = chip.dataset.week;
+    if(e.target.dataset.action === 'del'){ deleteWeek(w, e); }
+    else { chipClick(w, e); }
+  });
+  _strip.addEventListener('mousedown', function(e){
+    const chip = e.target.closest('[data-action="chip"]');
+    if(chip && e.target.dataset.action !== 'del') chipDragStart(chip.dataset.week, e);
+  });
+  _strip.addEventListener('mouseover', function(e){
+    const chip = e.target.closest('[data-action="chip"]');
+    if(chip) chipDragEnter(chip.dataset.week);
+  });
+
+  syncFromDB();
+});
+</script>
+</body>
+</html>

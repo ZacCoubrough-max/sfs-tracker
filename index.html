@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEA Fulfillment Hub</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F6D2;</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080808; --s1:#111111; --s2:#181818; --s3:#1f1f1f;
+  --border:#242424; --border2:#333;
+  --y:#FFE600; --yd:rgba(255,230,0,0.08); --yb:rgba(255,230,0,0.15);
+  --green:#4eff9a; --red:#ff4d4d; --blue:#4f8ef7; --amber:#FFD600;
+  --text:#f0f0f0; --t2:#888; --t3:#444;
+  --sa:#4eff9a; --sb:#4f8ef7; --sc:#FFD600; --sd:#ff4d4d;
+  --mono:'DM Mono',monospace; --sans:'Syne',sans-serif;
+  --r:6px; --r2:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:var(--mono);background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
+
+/* ── Topbar ── */
+.topbar{flex-shrink:0;display:flex;align-items:center;gap:0;height:52px;border-bottom:1px solid var(--border);background:var(--s1);padding:0 20px;position:relative;z-index:50;}
+.topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--y) 0%,transparent 40%);}
+.logo{font-family:var(--sans);font-size:13px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--y);margin-right:28px;white-space:nowrap;flex-shrink:0;}
+
+/* Country tabs */
+.ctabs{display:flex;gap:2px;height:100%;align-items:center;}
+.ctab{font-family:var(--sans);font-size:12px;font-weight:700;padding:6px 14px;border-radius:var(--r);cursor:pointer;color:var(--t2);background:none;border:none;transition:all .15s;height:36px;display:flex;align-items:center;gap:6px;}
+.ctab:hover{color:var(--text);background:var(--s2);}
+.ctab.active{color:var(--y);background:var(--yd);}
+.ctab-flag{font-size:14px;}
+.div{width:1px;height:22px;background:var(--border);margin:0 10px;flex-shrink:0;}
+
+/* Programme tabs */
+.ptabs{display:flex;gap:2px;height:100%;align-items:center;}
+.ptab{font-family:var(--mono);font-size:11px;padding:5px 14px;border-radius:20px;cursor:pointer;color:var(--t2);background:none;border:1px solid transparent;transition:all .15s;}
+.ptab:hover{color:var(--text);border-color:var(--border2);}
+.ptab.active{color:var(--y);border-color:var(--y);background:var(--yd);}
+
+/* Right side of topbar */
+.topbar-right{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.icon-btn{width:34px;height:34px;border-radius:var(--r);border:1px solid var(--border);background:none;color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .15s;flex-shrink:0;}
+.icon-btn:hover{border-color:var(--border2);color:var(--text);}
+.icon-btn.active{border-color:var(--y);color:var(--y);background:var(--yd);}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--y);animation:pulse .9s infinite;flex-shrink:0;}
+.sync-dot.hidden{opacity:0;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.2;}}
+.db-pill{font-size:10px;padding:3px 9px;border-radius:20px;border:1px solid var(--border);color:var(--t2);letter-spacing:.5px;}
+.db-pill.ok{color:var(--green);border-color:rgba(78,255,154,.2);}
+.db-pill.err{color:var(--red);border-color:rgba(255,77,77,.2);}
+
+/* ── Week bar ── */
+.weekbar{flex-shrink:0;display:flex;align-items:center;gap:6px;padding:8px 20px;border-bottom:1px solid var(--border);background:var(--bg);flex-wrap:wrap;}
+.wbar-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);flex-shrink:0;}
+.wchip{display:inline-flex;align-items:center;gap:4px;background:var(--s2);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;transition:all .15s;user-select:none;white-space:nowrap;}
+.wchip:hover{border-color:var(--border2);color:var(--y);}
+.wchip.active{background:var(--yd);border-color:var(--y);color:var(--y);}
+.wchip.period-b{border-style:dashed;color:var(--t2);background:transparent;}
+.wchip .x{font-size:9px;color:var(--t3);margin-left:1px;padding:0 1px;}
+.wchip:hover .x{color:var(--red);}
+.wbar-actions{display:flex;gap:4px;margin-left:auto;flex-shrink:0;}
+.wbar-btn{font-size:10px;padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:none;color:var(--t2);cursor:pointer;transition:all .15s;font-family:var(--mono);letter-spacing:.3px;}
+.wbar-btn:hover{border-color:var(--border2);color:var(--text);}
+.wbar-btn.active{border-color:var(--y);color:var(--y);background:var(--yd);}
+.mode-sep{width:1px;height:16px;background:var(--border);margin:0 2px;}
+
+/* ── Section tabs ── */
+.sectbar{flex-shrink:0;display:flex;align-items:center;gap:2px;padding:0 20px;border-bottom:1px solid var(--border);background:var(--s1);height:42px;}
+.stab{font-family:var(--sans);font-size:11px;font-weight:600;padding:6px 14px;border-radius:var(--r);cursor:pointer;color:var(--t2);background:none;border:none;transition:all .15s;display:flex;align-items:center;gap:5px;letter-spacing:.3px;}
+.stab:hover{color:var(--text);}
+.stab.active{color:var(--y);background:var(--yd);}
+.stab .badge{background:var(--red);color:#fff;border-radius:8px;font-size:9px;padding:1px 5px;font-family:var(--mono);}
+.sectbar-right{margin-left:auto;display:flex;align-items:center;gap:6px;}
+
+/* ── Stat bar ── */
+.statbar{flex-shrink:0;display:grid;grid-template-columns:repeat(6,1fr);gap:0;border-bottom:1px solid var(--border);}
+.stat-cell{padding:10px 16px;border-right:1px solid var(--border);position:relative;}
+.stat-cell:last-child{border-right:none;}
+.stat-lbl{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--t2);margin-bottom:4px;}
+.stat-val{font-family:var(--sans);font-size:19px;font-weight:800;letter-spacing:-.5px;line-height:1;}
+.stat-delta{font-size:10px;margin-top:2px;}
+.stat-cell::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:var(--y);opacity:0;transition:opacity .2s;}
+.stat-cell:hover::before{opacity:1;}
+
+/* ── Main area ── */
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column;}
+.content{flex:1;overflow-y:auto;position:relative;}
+
+/* ── Table ── */
+.tbl-wrap{overflow-x:auto;}
+.search-bar{padding:8px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--bg);}
+.search-input{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:6px 12px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none;width:220px;transition:border-color .15s;}
+.search-input:focus{border-color:var(--y);}
+.period-banner{font-size:11px;color:var(--t2);padding:6px 16px;border-bottom:1px solid var(--border);background:var(--s1);}
+table{width:100%;border-collapse:collapse;}
+thead th{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--t2);padding:9px 14px;text-align:left;border-bottom:1px solid var(--border);background:var(--s1);cursor:pointer;white-space:nowrap;position:sticky;top:0;z-index:2;}
+thead th:hover{color:var(--text);}
+.sort-i{font-size:9px;margin-left:3px;}
+.sort-i.on{color:var(--y);}
+tbody tr{border-bottom:1px solid rgba(36,36,36,.7);transition:background .1s;cursor:pointer;}
+tbody tr:hover{background:var(--yd);}
+tbody td{padding:9px 14px;font-size:12px;vertical-align:middle;}
+.rank-cell{display:flex;align-items:center;gap:5px;}
+.score-bar-bg{width:40px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
+.score-bar-fill{height:100%;border-radius:2px;}
+.store-name{font-family:var(--sans);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;}
+.store-id{font-size:10px;color:var(--t2);margin-top:1px;}
+.metric{font-family:var(--mono);font-size:12px;}
+.note-dot{width:5px;height:5px;border-radius:50%;background:var(--amber);display:inline-block;margin-left:4px;vertical-align:middle;}
+.rc-tag{font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;background:var(--s2);color:var(--y);padding:1px 5px;margin-left:5px;border-radius:3px;}
+.tier-badge{display:inline-flex;align-items:center;font-family:var(--sans);font-size:10px;font-weight:800;letter-spacing:1px;padding:2px 8px;border-radius:4px;}
+.tier-A{background:rgba(78,255,154,.12);color:var(--sa);}
+.tier-B{background:rgba(79,142,247,.12);color:var(--sb);}
+.tier-C{background:rgba(255,214,0,.10);color:var(--sc);}
+.tier-D{background:rgba(255,77,77,.12);color:var(--sd);}
+.delta{font-family:var(--mono);font-size:10px;}
+.delta-up{color:var(--green);}
+.delta-dn{color:var(--red);}
+.delta-flat{color:var(--t2);}
+
+/* ── Sparklines ── */
+.spark svg{overflow:visible;}
+
+/* ── Empty state ── */
+.empty{text-align:center;padding:60px 20px;color:var(--t2);}
+.empty h2{font-family:var(--sans);font-size:15px;font-weight:800;color:var(--text);margin-bottom:8px;}
+.empty p{font-size:11px;line-height:1.7;}
+.empty .upload-hint{margin-top:20px;display:inline-flex;align-items:center;gap:8px;font-size:11px;color:var(--y);border:1px dashed rgba(255,230,0,.3);border-radius:var(--r);padding:10px 20px;cursor:pointer;}
+.empty .upload-hint:hover{background:var(--yd);}
+
+/* ── Health / Movers / Alerts panels ── */
+.section-pad{padding:20px;}
+.panel{background:var(--s2);border:1px solid var(--border);border-radius:var(--r2);padding:16px;margin-bottom:14px;}
+.panel-title{font-family:var(--sans);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--y);margin-bottom:14px;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.health-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.hcard{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;}
+.hcard-val{font-family:var(--sans);font-size:26px;font-weight:800;line-height:1;}
+.hcard-lbl{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--t2);margin-top:4px;}
+.chart-container{position:relative;width:100%;height:200px;}
+.alert-item{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-left:3px solid;margin-bottom:6px;border-radius:0 var(--r) var(--r) 0;cursor:pointer;transition:background .12s;}
+.alert-item:hover{background:var(--s3);}
+.alert-sev-high{border-color:var(--red);background:rgba(255,77,77,.04);}
+.alert-sev-med{border-color:var(--amber);background:rgba(255,214,0,.04);}
+.alert-sev-low{border-color:var(--green);background:rgba(78,255,154,.04);}
+.alert-store{font-family:var(--sans);font-size:12px;font-weight:700;text-transform:uppercase;}
+.alert-msg{font-size:11px;color:var(--t2);margin-top:2px;}
+.mover-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(36,36,36,.4);cursor:pointer;}
+.mover-row:last-child{border-bottom:none;}
+.mover-row:hover{padding-left:4px;}
+.mover-delta{font-family:var(--sans);font-size:14px;font-weight:800;min-width:48px;text-align:right;}
+
+/* ── Drawer ── */
+.overlay{position:fixed;inset:0;background:rgba(8,8,8,.7);z-index:200;display:none;backdrop-filter:blur(4px);}
+.overlay.open{display:block;}
+.drawer{position:fixed;right:0;top:0;height:100%;width:400px;background:var(--s1);border-left:1px solid var(--border);z-index:300;overflow-y:auto;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);}
+.drawer.open{transform:translateX(0);}
+.drawer-hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--s1);z-index:1;}
+.drawer-title{font-family:var(--sans);font-size:16px;font-weight:800;text-transform:uppercase;color:var(--y);letter-spacing:.5px;}
+.drawer-sub{font-size:10px;color:var(--t2);margin-top:3px;}
+.drawer-x{background:none;border:1px solid var(--border);border-radius:var(--r);color:var(--t2);font-size:14px;cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
+.drawer-x:hover{border-color:var(--red);color:var(--red);}
+.drawer-body{padding:18px 20px;}
+.dsec{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--y);margin:16px 0 10px;font-family:var(--mono);}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:4px;}
+.kpi-card{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:10px;}
+.kpi-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--t2);margin-bottom:5px;}
+.kpi-val{font-family:var(--sans);font-size:17px;font-weight:800;letter-spacing:-.5px;}
+.kpi-delta{font-size:10px;margin-top:2px;}
+.note-area{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none;resize:vertical;min-height:70px;transition:border-color .15s;}
+.note-area:focus{border-color:var(--y);}
+.rc-select{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;font-family:var(--mono);font-size:11px;color:var(--text);outline:none;cursor:pointer;transition:border-color .15s;}
+.rc-select:focus{border-color:var(--y);}
+.note-saved{font-size:10px;color:var(--green);display:none;margin-left:8px;}
+.hist-table th{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--t2);padding:6px 8px;background:var(--bg);border-bottom:1px solid var(--border);}
+.hist-table td{font-size:11px;padding:6px 8px;border-bottom:1px solid rgba(36,36,36,.4);}
+.drawer-chart{height:130px;position:relative;}
+
+/* ── Settings modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(8,8,8,.8);z-index:400;display:none;backdrop-filter:blur(6px);align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--s1);border:1px solid var(--border);border-radius:var(--r2);width:520px;max-width:94vw;max-height:88vh;overflow-y:auto;}
+.modal-hdr{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--s1);z-index:1;}
+.modal-title{font-family:var(--sans);font-size:13px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--y);}
+.modal-body{padding:20px;}
+.modal-section{margin-bottom:20px;}
+.modal-section-title{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--t2);margin-bottom:12px;font-family:var(--mono);}
+.slider-row{margin-bottom:12px;}
+.slider-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.slider-name{font-size:11px;color:var(--t2);display:flex;align-items:center;gap:6px;}
+.slider-val{font-family:var(--mono);font-size:11px;color:var(--y);font-weight:700;}
+input[type=range]{width:100%;accent-color:var(--y);height:3px;}
+.weight-total{font-family:var(--mono);font-size:11px;padding:6px 10px;border-radius:var(--r);border:1px solid var(--border);margin-top:6px;}
+.weight-total.ok{color:var(--green);border-color:rgba(78,255,154,.2);background:rgba(78,255,154,.06);}
+.weight-total.bad{color:var(--red);border-color:rgba(255,77,77,.2);background:rgba(255,77,77,.06);}
+.tier-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
+.tier-d-note{font-size:10px;color:var(--t2);margin-top:6px;}
+.modal-lock-note{font-size:10px;color:var(--t2);padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);margin-bottom:14px;line-height:1.6;}
+
+/* ── Upload modal ── */
+.upload-modal{width:440px;}
+.upload-modal .modal-body{padding:20px;}
+.upload-field{margin-bottom:14px;}
+.upload-field label{display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--t2);margin-bottom:6px;}
+.upload-input{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none;transition:border-color .15s;}
+.upload-input:focus{border-color:var(--y);}
+.upload-input.warn{border-color:var(--amber);}
+.upload-warn{font-size:10px;color:var(--amber);margin-top:3px;display:none;}
+.upload-warn.show{display:block;}
+.upload-drop{border:1px dashed var(--border2);border-radius:var(--r);padding:20px;text-align:center;cursor:pointer;transition:all .15s;margin-top:4px;}
+.upload-drop:hover,.upload-drop.drag{border-color:var(--y);background:var(--yd);}
+.upload-drop p{font-size:11px;color:var(--t2);margin-top:6px;}
+.upload-drop .icon{font-size:24px;}
+.file-chosen{font-size:11px;color:var(--green);margin-top:6px;display:none;}
+.file-chosen.show{display:block;}
+
+/* ── AI panel ── */
+.ai-modal{width:640px;max-width:94vw;}
+.ai-prompts{display:flex;gap:5px;flex-wrap:wrap;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--s2);}
+.ai-pbtn{font-family:var(--mono);font-size:10px;padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:none;color:var(--t2);cursor:pointer;transition:all .15s;letter-spacing:.3px;}
+.ai-pbtn:hover{border-color:var(--border2);color:var(--text);}
+.ai-pbtn.active{border-color:var(--y);background:var(--yd);color:var(--y);}
+.ai-body{min-height:200px;padding:18px 20px;flex:1;overflow-y:auto;max-height:50vh;}
+.ai-response{font-family:var(--mono);font-size:12px;color:var(--text);line-height:1.8;white-space:pre-wrap;}
+.ai-loading{display:flex;align-items:center;gap:10px;color:var(--t2);font-size:11px;}
+.ai-dot{width:6px;height:6px;border-radius:50%;background:var(--y);animation:aipulse 1.2s infinite;}
+.ai-dot:nth-child(2){animation-delay:.2s;}
+.ai-dot:nth-child(3){animation-delay:.4s;}
+@keyframes aipulse{0%,80%,100%{opacity:.2;}40%{opacity:1;}}
+.ai-footer{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-top:1px solid var(--border);background:var(--s2);}
+.ai-meta{font-size:9px;color:var(--t2);}
+
+/* ── Buttons ── */
+.btn{font-family:var(--mono);font-size:11px;letter-spacing:.8px;text-transform:uppercase;padding:7px 16px;border-radius:var(--r);border:none;cursor:pointer;transition:all .15s;}
+.btn-primary{background:var(--y);color:#000;font-weight:700;}
+.btn-primary:hover{opacity:.88;}
+.btn-ghost{background:none;color:var(--t2);border:1px solid var(--border);}
+.btn-ghost:hover{border-color:var(--y);color:var(--y);}
+.btn-sm{font-family:var(--mono);font-size:10px;padding:5px 12px;border-radius:var(--r);border:1px solid var(--border);background:none;color:var(--t2);cursor:pointer;transition:all .15s;}
+.btn-sm:hover{border-color:var(--y);color:var(--y);}
+
+/* ── Future tab ── */
+.future-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:800px;margin:0 auto;}
+.future-card{background:var(--s2);border:1px solid var(--border);border-radius:var(--r2);padding:16px;border-left:3px solid;}
+.future-card h3{font-family:var(--sans);font-size:12px;font-weight:800;text-transform:uppercase;margin-bottom:8px;}
+.future-card p{font-size:11px;color:var(--t2);line-height:1.7;}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--border2);}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:10px 16px;font-size:11px;z-index:9999;transform:translateY(50px);opacity:0;transition:all .25s;max-width:300px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-color:var(--green);color:var(--green);}
+.toast.error{border-color:var(--red);color:var(--red);}
+.toast.info{border-color:var(--y);color:var(--y);}
+
+/* Config history */
+.cfg-row{border-bottom:1px solid var(--border);padding:8px 0;font-size:10px;}
+.cfg-row:last-child{border-bottom:none;}
+
+@media(max-width:700px){
+  .statbar{grid-template-columns:repeat(3,1fr);}
+  .drawer{width:100%;}
+  .two-col{grid-template-columns:1fr;}
+  .future-grid{grid-template-columns:1fr;}
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">SEA FF Hub</div>
+  <div class="ctabs" id="ctabs">
+    <button class="ctab active" onclick="switchCountry('MY')"><span class="ctab-flag">🇲🇾</span>Malaysia</button>
+    <button class="ctab" onclick="switchCountry('SG')"><span class="ctab-flag">🇸🇬</span>Singapore</button>
+    <button class="ctab" onclick="switchCountry('TH')"><span class="ctab-flag">🇹🇭</span>Thailand</button>
+    <button class="ctab" onclick="switchCountry('future')" style="margin-left:6px;color:var(--t2)">☁ Future</button>
+  </div>
+  <div class="div"></div>
+  <div class="ptabs" id="ptabs">
+    <button class="ptab active" onclick="switchProg('sfs')">Ship From Store</button>
+    <button class="ptab" onclick="switchProg('cnc')">Click &amp; Collect</button>
+  </div>
+  <div class="topbar-right">
+    <span class="sync-dot hidden" id="sync-dot"></span>
+    <span class="db-pill" id="db-pill">Connecting...</span>
+    <button class="icon-btn" onclick="triggerUpload()" title="Upload CSV">↑</button>
+    <button class="icon-btn" onclick="doExport()" title="Export CSV">↓</button>
+    <button class="icon-btn" onclick="doPrint()" title="Print report">⊟</button>
+    <button class="icon-btn" onclick="openAI()" title="AI Summary" id="ai-btn">✦</button>
+    <button class="icon-btn" onclick="openSettings()" title="Settings" id="settings-btn">⚙</button>
+  </div>
+</div>
+
+<!-- WEEK BAR -->
+<div class="weekbar" id="weekbar">
+  <span class="wbar-label">Week</span>
+  <div id="week-chips" style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;flex:1">
+    <span style="font-size:11px;color:var(--t2)">Loading...</span>
+  </div>
+  <div class="wbar-actions">
+    <button class="wbar-btn" onclick="selectQuarter('Q1')">Q1</button>
+    <button class="wbar-btn" onclick="selectQuarter('Q2')">Q2</button>
+    <button class="wbar-btn" onclick="selectQuarter('Q3')">Q3</button>
+    <button class="wbar-btn" onclick="selectQuarter('Q4')">Q4</button>
+    <button class="wbar-btn" onclick="selectAll()">All</button>
+    <div class="mode-sep"></div>
+    <button class="wbar-btn active" id="mode-single" onclick="setMode('single')">Single</button>
+    <button class="wbar-btn" id="mode-period" onclick="setMode('period')">Period</button>
+  </div>
+</div>
+
+<!-- SECTION TABS -->
+<div class="sectbar">
+  <button class="stab active" onclick="setSection('stores',this)">Stores</button>
+  <button class="stab" onclick="setSection('health',this)">Network Health</button>
+  <button class="stab" onclick="setSection('movers',this)">Movers</button>
+  <button class="stab" onclick="setSection('alerts',this)">Alerts <span class="badge" id="alert-badge" style="display:none">0</span></button>
+  <button class="stab" onclick="setSection('overall',this)">Overall</button>
+  <div class="sectbar-right">
+    <span id="period-hint" style="font-size:10px;color:var(--t2)"></span>
+  </div>
+</div>
+
+<!-- STAT BAR -->
+<div class="statbar" id="statbar">
+  <div class="stat-cell"><div class="stat-lbl">Stores</div><div class="stat-val" id="st-stores">—</div></div>
+  <div class="stat-cell"><div class="stat-lbl">Avg Score</div><div class="stat-val" id="st-score">—</div><div class="stat-delta" id="st-score-d"></div></div>
+  <div class="stat-cell"><div class="stat-lbl">Avg % Claimed</div><div class="stat-val" id="st-claimed">—</div><div class="stat-delta" id="st-claimed-d"></div></div>
+  <div class="stat-cell"><div class="stat-lbl">Tier A</div><div class="stat-val" id="st-a" style="color:var(--sa)">—</div><div class="stat-delta" id="st-a-d"></div></div>
+  <div class="stat-cell"><div class="stat-lbl">Tier D</div><div class="stat-val" id="st-d" style="color:var(--sd)">—</div></div>
+  <div class="stat-cell"><div class="stat-lbl">Weeks</div><div class="stat-val" id="st-weeks" style="color:var(--y)">—</div></div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+  <div class="content" id="content">
+    <div class="empty"><h2>Loading</h2><p>Connecting to database...</p></div>
+  </div>
+</div>
+
+<!-- FUTURE TAB (hidden initially) -->
+<div id="future-panel" style="display:none;flex:1;overflow-y:auto;padding:24px;">
+  <div style="max-width:800px;margin:0 auto">
+    <div style="margin-bottom:24px">
+      <div style="font-family:var(--sans);font-size:20px;font-weight:800;text-transform:uppercase;letter-spacing:.5px">Future Considerations</div>
+      <div style="font-size:11px;color:var(--t2);margin-top:4px">Planned features and enhancements for the SEA Fulfillment Hub</div>
+    </div>
+    <div class="future-grid">
+      <div class="future-card" style="border-left-color:var(--y)"><h3 style="color:var(--y)">✦ AI-Powered Summaries</h3><p>Generate plain-English performance summaries from your live data. Weekly recap, action items, movers &amp; trends, or stakeholder email format. One click, ready to share.</p></div>
+      <div class="future-card" style="border-left-color:var(--blue)"><h3 style="color:var(--blue)">📈 Year-on-Year Comparison</h3><p>Compare the same week or quarter across years. W07 2026 vs W07 2025 side by side, per store. Data structure already supports it.</p></div>
+      <div class="future-card" style="border-left-color:var(--green)"><h3 style="color:var(--green)">🔍 Store Benchmarking</h3><p>Cross-country benchmarking to compare equivalent stores in MY, SG and TH. Identify which market sets the standard.</p></div>
+      <div class="future-card" style="border-left-color:var(--amber)"><h3 style="color:var(--amber)">🔔 Automated Alerts Digest</h3><p>Weekly email or Teams digest sent automatically after upload. Highlights Tier D stores, missed revenue, biggest movers.</p></div>
+      <div class="future-card" style="border-left-color:var(--red)"><h3 style="color:var(--red)">🎯 Store Recovery Plans</h3><p>Set individual store targets beyond network-wide targets. Track recovery plans for Tier D stores with target score and deadline.</p></div>
+      <div class="future-card" style="border-left-color:#a855f7"><h3 style="color:#a855f7">📋 Programme Expansion</h3><p>Add Same Day Delivery or Returns performance as additional programme tabs using the same country and scoring architecture.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- DRAWER -->
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-hdr">
+    <div><div class="drawer-title" id="drawer-title"></div><div class="drawer-sub" id="drawer-sub"></div></div>
+    <button class="drawer-x" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settings-overlay" onclick="if(event.target===this)closeSettings()">
+  <div class="modal" id="settings-modal">
+    <div class="modal-hdr">
+      <span class="modal-title" id="settings-title">Settings</span>
+      <button class="drawer-x" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="modal-body" id="settings-body"></div>
+  </div>
+</div>
+
+<!-- UPLOAD MODAL -->
+<div class="modal-overlay" id="upload-overlay" onclick="if(event.target===this)closeUpload()">
+  <div class="modal upload-modal">
+    <div class="modal-hdr">
+      <span class="modal-title" id="upload-title">Upload CSV</span>
+      <button class="drawer-x" onclick="closeUpload()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="upload-field">
+        <label>Week label</label>
+        <input type="text" class="upload-input" id="upload-label" placeholder="e.g. W10 2026" oninput="checkUploadLabel()">
+        <div class="upload-warn" id="upload-warn">⚠ Week already exists — uploading will overwrite it</div>
+      </div>
+      <div class="upload-field">
+        <label>CSV file</label>
+        <div class="upload-drop" id="upload-drop" onclick="document.getElementById('upload-file').click()">
+          <div class="icon">↑</div>
+          <p>Click to browse or drop CSV here</p>
+          <div class="file-chosen" id="file-chosen"></div>
+        </div>
+        <input type="file" id="upload-file" accept=".csv" style="display:none">
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+        <button class="btn-ghost btn" onclick="closeUpload()">Cancel</button>
+        <button class="btn-primary btn" onclick="doUpload()">Upload &amp; Score</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AI MODAL -->
+<div class="modal-overlay" id="ai-overlay" onclick="if(event.target===this)closeAI()">
+  <div class="modal ai-modal" style="display:flex;flex-direction:column;">
+    <div class="modal-hdr">
+      <span class="modal-title" id="ai-modal-title">✦ AI Summary</span>
+      <button class="drawer-x" onclick="closeAI()">✕</button>
+    </div>
+    <div class="ai-prompts">
+      <button class="ai-pbtn active" id="ai-p-weekly" onclick="setAiMode('weekly')">Weekly recap</button>
+      <button class="ai-pbtn" id="ai-p-actions" onclick="setAiMode('actions')">Action items</button>
+      <button class="ai-pbtn" id="ai-p-movers" onclick="setAiMode('movers')">Movers &amp; trends</button>
+      <button class="ai-pbtn" id="ai-p-email" onclick="setAiMode('email')">Stakeholder email</button>
+    </div>
+    <div class="ai-body" id="ai-body">
+      <div style="color:var(--t2);font-size:11px;padding:10px 0">Select a summary type above to generate.</div>
+    </div>
+    <div class="ai-footer">
+      <span class="ai-meta" id="ai-meta"></span>
+      <button class="btn-sm" id="ai-copy" onclick="copyAI()" style="display:none">✓ Copy</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONSTANTS & CONFIG
+// ═══════════════════════════════════════════════════════════════
+const SUPABASE_URL='https://tsggtrhnlozrblrwxugc.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzZ2d0cmhubG96cmJscnd4dWdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5NjEyNzEsImV4cCI6MjA4OTUzNzI3MX0.msqeqQYWWOMeMSazMiAdO9PBi5xV6mOkYDWYkfUoo3Y';
+const HDRS={'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Prefer':'return=minimal'};
+const COUNTRIES=['MY','SG','TH'];
+const PWD='JDsportsSEA!';
+const CNC_CCY={MY:'MYR',SG:'SGD',TH:'THB'};
+const Q_RANGES={Q1:{s:1,e:13},Q2:{s:14,e:26},Q3:{s:27,e:39},Q4:{s:40,e:52}};
+
+// ═══════════════════════════════════════════════════════════════
+// APP STATE
+// ═══════════════════════════════════════════════════════════════
+let activeCountry='MY', activeProg='sfs', activeSection='stores';
+let settingsUnlocked=false;
+let openDrawerId=null, openDrawerCountry=null;
+let activeUploadFile=null;
+let healthChart=null, drawerChart=null;
+let aiLastResponse='', aiMode='weekly', aiLoading=false;
+
+// Per-country SFS state
+const sfsState={};
+COUNTRIES.forEach(c=>{
+  sfsState[c]={weeklyData:{},notes:{},rootCauses:{},configs:[],mode:'single',selectedWeeks:[],sortCol:'score',sortDir:-1,searchTerm:''};
+});
+
+// Per-country CnC state
+const cncState={};
+COUNTRIES.forEach(c=>{
+  cncState[c]={weeklyData:{},notes:{},rootCauses:{},configs:[],mode:'single',selectedWeeks:[],sortCol:'score',sortDir:-1,searchTerm:''};
+});
+
+// ═══════════════════════════════════════════════════════════════
+// DB HELPERS
+// ═══════════════════════════════════════════════════════════════
+async function dbGet(tbl,filter){
+  const r=await fetch(SUPABASE_URL+'/rest/v1/'+tbl+'?'+filter,{headers:HDRS});
+  if(!r.ok)throw new Error(await r.text());
+  return r.json();
+}
+async function dbInsert(tbl,rows){
+  const r=await fetch(SUPABASE_URL+'/rest/v1/'+tbl,{method:'POST',headers:{...HDRS,'Prefer':'return=minimal'},body:JSON.stringify(rows)});
+  if(!r.ok)throw new Error(await r.text());
+}
+async function dbDelete(tbl,filter){
+  const r=await fetch(SUPABASE_URL+'/rest/v1/'+tbl+'?'+filter,{method:'DELETE',headers:HDRS});
+  if(!r.ok)throw new Error(await r.text());
+}
+async function dbUpsert(tbl,rows){
+  const r=await fetch(SUPABASE_URL+'/rest/v1/'+tbl,{method:'POST',headers:{...HDRS,'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(rows)});
+  if(!r.ok)throw new Error(await r.text());
+}
+
+function showSync(v){document.getElementById('sync-dot').classList.toggle('hidden',!v);}
+function setDBStatus(ok,msg){const e=document.getElementById('db-pill');e.textContent=msg;e.className='db-pill '+(ok?'ok':'err');}
+
+// ═══════════════════════════════════════════════════════════════
+// SYNC
+// ═══════════════════════════════════════════════════════════════
+async function syncAll(){
+  showSync(true);
+  try{
+    for(const c of COUNTRIES){
+      // SFS
+      const rows=await dbGet('sfs_data','country=eq.'+c+'&select=week,store_id,store_name,reliability,claimed_pct,cpd,ttc,dur,speed_ratio&order=week.asc');
+      sfsState[c].weeklyData={};
+      rows.forEach(r=>{
+        if(!sfsState[c].weeklyData[r.week])sfsState[c].weeklyData[r.week]=[];
+        sfsState[c].weeklyData[r.week].push({id:r.store_id,name:r.store_name,reliability:+r.reliability,claimed_pct:+r.claimed_pct,cpd:+r.cpd,ttc:+r.ttc,dur:+r.dur,speed_ratio:+r.speed_ratio});
+      });
+      const sNotes=await dbGet('sfs_notes','country=eq.'+c+'&select=store_id,note,root_cause');
+      sfsState[c].notes={};sfsState[c].rootCauses={};
+      sNotes.forEach(r=>{if(r.note)sfsState[c].notes[r.store_id]=r.note;if(r.root_cause)sfsState[c].rootCauses[r.store_id]=r.root_cause;});
+      try{const cfgs=await dbGet('sfs_config','country=eq.'+c+'&select=*&order=saved_at.asc');sfsState[c].configs=cfgs||[];}catch(e){sfsState[c].configs=[];}
+      const swks=Object.keys(sfsState[c].weeklyData).sort();
+      if(swks.length&&!sfsState[c].selectedWeeks.length)sfsState[c].selectedWeeks=[swks[swks.length-1]];
+      sfsState[c].selectedWeeks=sfsState[c].selectedWeeks.filter(w=>sfsState[c].weeklyData[w]);
+      if(!sfsState[c].selectedWeeks.length&&swks.length)sfsState[c].selectedWeeks=[swks[swks.length-1]];
+
+      // CnC
+      const crows=await dbGet('cnc_data','country=eq.'+c+'&select=week,store_id,store_name,claimed,unclaimed,unavail,pct_bagged,ttb,missed_rev,bagged_rev&order=week.asc');
+      cncState[c].weeklyData={};
+      crows.forEach(r=>{
+        if(!cncState[c].weeklyData[r.week])cncState[c].weeklyData[r.week]=[];
+        cncState[c].weeklyData[r.week].push({id:r.store_id,name:r.store_name,claimed:+r.claimed||0,unclaimed:+r.unclaimed||0,unavail:+r.unavail||0,pct_bagged:+r.pct_bagged||0,ttb:+r.ttb||0,missed_rev:+r.missed_rev||0,bagged_rev:+r.bagged_rev||0});
+      });
+      const cNotes=await dbGet('cnc_notes','country=eq.'+c+'&select=store_id,note,root_cause');
+      cncState[c].notes={};cncState[c].rootCauses={};
+      cNotes.forEach(r=>{if(r.note)cncState[c].notes[r.store_id]=r.note;if(r.root_cause)cncState[c].rootCauses[r.store_id]=r.root_cause;});
+      try{const ccfgs=await dbGet('cnc_config','country=eq.'+c+'&select=*&order=saved_at.asc');cncState[c].configs=ccfgs||[];}catch(e){cncState[c].configs=[];}
+      const cwks=Object.keys(cncState[c].weeklyData).sort();
+      if(cwks.length&&!cncState[c].selectedWeeks.length)cncState[c].selectedWeeks=[cwks[cwks.length-1]];
+      cncState[c].selectedWeeks=cncState[c].selectedWeeks.filter(w=>cncState[c].weeklyData[w]);
+      if(!cncState[c].selectedWeeks.length&&cwks.length)cncState[c].selectedWeeks=[cwks[cwks.length-1]];
+    }
+    setDBStatus(true,'Connected ✓');
+    renderAll();
+  }catch(e){
+    setDBStatus(false,'DB Error');
+    document.getElementById('content').innerHTML='<div class="empty"><h2>Connection Failed</h2><p>'+e.message+'</p></div>';
+  }
+  showSync(false);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CSV PARSING
+// ═══════════════════════════════════════════════════════════════
+function parseCSVLine(line){
+  const res=[];let cur='',inQ=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(ch==='"'){inQ=!inQ;}
+    else if(ch===','&&!inQ){res.push(cur.trim());cur='';}
+    else{cur+=ch;}
+  }
+  res.push(cur.trim());
+  return res;
+}
+function parseSfsCSV(text){
+  const lines=text.split('\n').filter(l=>l.trim());
+  const headers=parseCSVLine(lines[0]).map(h=>h.replace(/^\uFEFF/,'').replace(/"/g,''));
+  const out=[];
+  for(let i=1;i<lines.length;i++){
+    const vals=parseCSVLine(lines[i]);
+    if(vals.length<5)continue;
+    const obj={};headers.forEach((h,idx)=>obj[h]=vals[idx]||'');
+    const id=obj['Stock location id']||'';
+    const name=obj['Stock location name']||id;
+    if(!id)continue;
+    const pf=k=>{const v=parseFloat((obj[k]||'').replace(/,/g,''));return isNaN(v)?0:v;};
+    let rel=pf('Candidate reliability');if(rel<=1)rel*=100;
+    let cpct=pf('% claimed orders (part)');if(cpct<=1)cpct*=100;
+    const cpd=pf('Claimed orders (part) per day');
+    const ttc=pf('Time to claim (h)');
+    const dur=pf('Candidate duration (h)');
+    out.push({id,name,reliability:rel,claimed_pct:cpct,cpd,ttc,dur,speed_ratio:dur>0?ttc/dur:0});
+  }
+  return out;
+}
+function parseCncCSV(text){
+  const lines=text.split('\n').filter(l=>l.trim());
+  const headers=parseCSVLine(lines[0]).map(h=>h.replace(/^\uFEFF/,'').replace(/"/g,''));
+  const out=[];
+  for(let i=1;i<lines.length;i++){
+    const vals=parseCSVLine(lines[i]);
+    if(vals.length<5)continue;
+    const obj={};headers.forEach((h,idx)=>obj[h]=vals[idx]||'');
+    const id=obj['Stock location id']||'';
+    const name=obj['Stock location name']||id;
+    if(!id)continue;
+    const pf=k=>{const v=parseFloat((obj[k]||'').replace(/,/g,''));return isNaN(v)?0:v;};
+    let pb=pf('% bagged');if(pb<=1)pb*=100;
+    out.push({id,name,claimed:pf('Claimed items'),unclaimed:pf('Unclaimed items'),unavail:pf('Unavailable items'),pct_bagged:pb,ttb:pf('Time to bag'),missed_rev:pf('Missed revenue'),bagged_rev:pf('Bagged revenue')});
+  }
+  return out;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SCORING ENGINE
+// ═══════════════════════════════════════════════════════════════
+function getState(){return activeProg==='sfs'?sfsState[activeCountry]:cncState[activeCountry];}
+function getSfsWeights(c){
+  const sfx=c==='MY'?'':'-'+c;
+  return{w1:+(document.getElementById('w1'+sfx)||{value:35}).value,w2:+(document.getElementById('w2'+sfx)||{value:20}).value,w3:+(document.getElementById('w3'+sfx)||{value:25}).value,w4:+(document.getElementById('w4'+sfx)||{value:20}).value};
+}
+function getCncWeights(c){
+  const sfx=c==='MY'?'':'-'+c;
+  return{w1:+(document.getElementById('cw1'+sfx)||{value:70}).value,w2:+(document.getElementById('cw2'+sfx)||{value:30}).value};
+}
+function getTiers(c,prog){
+  const sfx=c==='MY'?'':'-'+c;
+  const pfx=prog==='cnc'?'c':'';
+  const ta=+(document.getElementById(pfx+'ta'+sfx)||{value:65}).value;
+  const tb=Math.min(+(document.getElementById(pfx+'tb'+sfx)||{value:45}).value,ta-5);
+  const tc=Math.min(+(document.getElementById(pfx+'tc'+sfx)||{value:25}).value,tb-5);
+  return{a:ta,b:tb,c:tc};
+}
+function getTier(c,prog,score){const t=getTiers(c,prog);if(score>=t.a)return'A';if(score>=t.b)return'B';if(score>=t.c)return'C';return'D';}
+function scoreColor(tier){return tier==='A'?'var(--sa)':tier==='B'?'var(--sb)':tier==='C'?'var(--sc)':'var(--sd)';}
+function getClaimedTarget(c){return+(document.getElementById('ct'+(c==='MY'?'':'-'+c))||{value:40}).value;}
+function getSpeedTarget(c){return+(document.getElementById('st'+(c==='MY'?'':'-'+c))||{value:2}).value;}
+function getNetFloor(c){return+(document.getElementById('nf'+(c==='MY'?'':'-'+c))||{value:30}).value;}
+function getBagTarget(c){return+(document.getElementById('cbt'+(c==='MY'?'':'-'+c))||{value:2}).value;}
+
+function normMM(arr,key){const v=arr.map(s=>s[key]).filter(v=>!isNaN(v));return{min:Math.min(...v),max:Math.max(...v)};}
+function norm(val,min,max,inv){if(max===min)return 50;const n=(val-min)/(max-min)*100;return inv?100-n:n;}
+
+function sfsCalcScores(c,stores){
+  const w=getSfsWeights(c),total=w.w1+w.w2+w.w3+w.w4||1;
+  const r={cp:normMM(stores,'claimed_pct'),re:normMM(stores,'reliability'),sr:normMM(stores,'speed_ratio'),cpd:normMM(stores,'cpd')};
+  return stores.map(s=>({...s,score:(norm(s.claimed_pct,r.cp.min,r.cp.max,false)*w.w1+norm(s.reliability,r.re.min,r.re.max,false)*w.w2+norm(s.speed_ratio,r.sr.min,r.sr.max,true)*w.w3+norm(s.cpd,r.cpd.min,r.cpd.max,false)*w.w4)/total}));
+}
+function cncCalcScores(c,stores){
+  const w=getCncWeights(c),total=w.w1+w.w2||1;
+  const r={ttb:normMM(stores,'ttb'),pb:normMM(stores,'pct_bagged')};
+  return stores.map(s=>({...s,score:(norm(s.ttb,r.ttb.min,r.ttb.max,true)*w.w1+norm(s.pct_bagged,r.pb.min,r.pb.max,false)*w.w2)/total}));
+}
+function addRanks(scored){const sorted=[...scored].sort((a,b)=>b.score-a.score),rm={};sorted.forEach((s,i)=>rm[s.id]=i+1);return scored.map(s=>({...s,rank:rm[s.id]}));}
+
+function rescoreAll(){
+  const st=activeProg==='sfs'?sfsState:cncState;
+  const res={};
+  for(const[lbl,stores]of Object.entries(st[activeCountry].weeklyData)){
+    res[lbl]=addRanks(activeProg==='sfs'?sfsCalcScores(activeCountry,stores):cncCalcScores(activeCountry,stores));
+  }
+  return res;
+}
+
+function getWeekLabels(){
+  const st=activeProg==='sfs'?sfsState:cncState;
+  return Object.keys(st[activeCountry].weeklyData).sort();
+}
+function getWeekNum(label){const m=label.match(/W(\d+)/i);return m?parseInt(m[1]):null;}
+function suggestNext(label){const m=label.match(/^W(\d+)(\s+(\d{4}))?/i);if(m){const n=parseInt(m[1])+1;return'W'+(n<10?'0':'')+n+(m[3]?' '+m[3]:'');}return label;}
+
+function avgPeriod(weeks,sw){
+  const sm={};
+  weeks.forEach(w=>{(sw[w]||[]).forEach(s=>{if(!sm[s.id])sm[s.id]={id:s.id,name:s.name,vals:[]};sm[s.id].vals.push(s);});});
+  const avg=Object.values(sm).map(e=>{
+    const n=e.vals.length,mean=k=>e.vals.reduce((a,s)=>a+s[k],0)/n;
+    const base={id:e.id,name:e.name,score:mean('score')};
+    if(activeProg==='sfs'){Object.assign(base,{claimed_pct:mean('claimed_pct'),reliability:mean('reliability'),speed_ratio:mean('speed_ratio'),cpd:mean('cpd'),ttc:mean('ttc'),dur:mean('dur')});}
+    else{Object.assign(base,{pct_bagged:mean('pct_bagged'),ttb:mean('ttb'),missed_rev:mean('missed_rev'),claimed:mean('claimed')});}
+    return base;
+  });
+  avg.sort((a,b)=>b.score-a.score);avg.forEach((s,i)=>s.rank=i+1);
+  return avg;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+function switchCountry(c){
+  activeCountry=c;
+  document.querySelectorAll('.ctab').forEach((t,i)=>t.classList.toggle('active',['MY','SG','TH','future'][i]===c));
+  const isFuture=c==='future';
+  document.querySelector('.main').style.display=isFuture?'none':'flex';
+  document.querySelector('.weekbar').style.display=isFuture?'none':'flex';
+  document.querySelector('.sectbar').style.display=isFuture?'none':'flex';
+  document.querySelector('.statbar').style.display=isFuture?'none':'grid';
+  document.getElementById('future-panel').style.display=isFuture?'block':'none';
+  if(!isFuture)renderAll();
+}
+
+function switchProg(p){
+  activeProg=p;
+  document.querySelectorAll('.ptab').forEach((t,i)=>t.classList.toggle('active',['sfs','cnc'][i]===p));
+  // Update stat bar labels for CnC
+  if(p==='cnc'){
+    document.querySelector('#statbar .stat-cell:nth-child(3) .stat-lbl').textContent='Avg TTB';
+    document.querySelector('#statbar .stat-cell:nth-child(4) .stat-lbl').textContent='Tier A';
+  } else {
+    document.querySelector('#statbar .stat-cell:nth-child(3) .stat-lbl').textContent='Avg % Claimed';
+  }
+  renderAll();
+}
+
+function setSection(s,el){
+  activeSection=s;
+  document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  if(healthChart){healthChart.destroy();healthChart=null;}
+  renderContent();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// WEEK MANAGEMENT
+// ═══════════════════════════════════════════════════════════════
+function st(){return activeProg==='sfs'?sfsState[activeCountry]:cncState[activeCountry];}
+
+function setMode(m){
+  const s=st();
+  s.mode=m;
+  document.getElementById('mode-single').classList.toggle('active',m==='single');
+  document.getElementById('mode-period').classList.toggle('active',m==='period');
+  if(m==='single'&&s.selectedWeeks.length>1)s.selectedWeeks=[s.selectedWeeks[s.selectedWeeks.length-1]];
+  renderAll();
+}
+
+function selectQuarter(q){
+  const wks=getWeekLabels();
+  const r=Q_RANGES[q];
+  if(!r)return;
+  const matching=wks.filter(w=>{const n=getWeekNum(w);return n>=r.s&&n<=r.e;});
+  if(!matching.length){showToast('No weeks loaded for '+q,'info');return;}
+  const s=st();
+  s.selectedWeeks=matching;
+  s.mode=matching.length>1?'period':'single';
+  document.getElementById('mode-single').classList.toggle('active',s.mode==='single');
+  document.getElementById('mode-period').classList.toggle('active',s.mode==='period');
+  renderAll();
+}
+
+function selectAll(){
+  const wks=getWeekLabels();
+  if(!wks.length)return;
+  const s=st();
+  s.selectedWeeks=wks;
+  s.mode=wks.length>1?'period':'single';
+  document.getElementById('mode-single').classList.toggle('active',s.mode==='single');
+  document.getElementById('mode-period').classList.toggle('active',s.mode==='period');
+  renderAll();
+}
+
+function chipClick(label,e){
+  e.stopPropagation();
+  const s=st();
+  if(s.mode==='single'){s.selectedWeeks=[label];}
+  else{if(s.selectedWeeks.includes(label)){if(s.selectedWeeks.length>1)s.selectedWeeks=s.selectedWeeks.filter(w=>w!==label);}else{s.selectedWeeks=[...s.selectedWeeks,label].sort();}}
+  renderAll();
+}
+
+async function deleteWeek(label,e){
+  e.stopPropagation();
+  const pwd=prompt('Admin password to delete "'+label+'":');
+  if(pwd!==PWD){alert('Incorrect password.');return;}
+  if(!confirm('Delete "'+label+'" from '+activeCountry+' '+activeProg.toUpperCase()+'? Cannot be undone.'))return;
+  showSync(true);
+  try{
+    const tbl=activeProg==='sfs'?'sfs_data':'cnc_data';
+    await dbDelete(tbl,'country=eq.'+activeCountry+'&week=eq.'+encodeURIComponent(label));
+    const s=st();
+    delete s.weeklyData[label];
+    s.selectedWeeks=s.selectedWeeks.filter(w=>w!==label);
+    const wks=getWeekLabels();
+    if(!s.selectedWeeks.length&&wks.length)s.selectedWeeks=[wks[wks.length-1]];
+    renderAll();
+    showToast('Week deleted','success');
+  }catch(err){alert('Delete failed: '+err.message);}
+  showSync(false);
+}
+
+function getPriorPeriod(sel,allWks){
+  const n=sel.length,first=allWks.indexOf(sel[0]);
+  if(first<n)return[];
+  return allWks.slice(first-n,first);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER WEEK BAR
+// ═══════════════════════════════════════════════════════════════
+function renderWeekBar(){
+  const wks=getWeekLabels(),s=st();
+  const chips=document.getElementById('week-chips');
+  if(!wks.length){chips.innerHTML='<span style="font-size:11px;color:var(--t2)">No data — upload a CSV to get started</span>';return;}
+  const pp=s.mode==='period'?getPriorPeriod(s.selectedWeeks,wks):[];
+  chips.innerHTML=wks.map(w=>{
+    const inA=s.selectedWeeks.includes(w),inB=pp.includes(w);
+    const cls=inA?'active':inB?'period-b':'';
+    return`<div class="wchip ${cls}" onclick="chipClick('${w}',event)"><span>${w}</span><span class="x" onclick="deleteWeek('${w}',event)">✕</span></div>`;
+  }).join('');
+  // Period hint
+  const hint=document.getElementById('period-hint');
+  if(s.mode==='period'&&s.selectedWeeks.length>1){
+    const a=s.selectedWeeks[0]+' → '+s.selectedWeeks[s.selectedWeeks.length-1];
+    const b=pp.length?(pp[0]+(pp.length>1?' → '+pp[pp.length-1]:'')):'no prior period';
+    hint.innerHTML=`<span style="color:var(--y)">${a}</span> <span style="color:var(--t3)">vs</span> <span>${b}</span>`;
+  } else {
+    hint.textContent='';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER STAT BAR
+// ═══════════════════════════════════════════════════════════════
+function renderStatBar(curr,prev){
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.innerHTML=v;};
+  const delta=(d,sfx,dec)=>{if(d===null||d===undefined)return'';const s=d>0?'+':'',cls=d>0.05?'delta-up':d<-0.05?'delta-dn':'delta-flat';return`<span class="delta ${cls}">${s}${d.toFixed(dec||1)}${sfx||''}</span>`;};
+  const wks=getWeekLabels();
+  set('st-stores',curr.length);
+  set('st-weeks',wks.length);
+  if(activeProg==='sfs'){
+    const avg=curr.reduce((a,s)=>a+s.score,0)/curr.length||0;
+    const avgC=curr.reduce((a,s)=>a+s.claimed_pct,0)/curr.length||0;
+    const ta=curr.filter(s=>getTier(activeCountry,activeProg,s.score)==='A').length;
+    const td=curr.filter(s=>getTier(activeCountry,activeProg,s.score)==='D').length;
+    set('st-score',avg.toFixed(0));
+    set('st-claimed',avgC.toFixed(1)+'%');
+    set('st-a',ta);set('st-d',td);
+    if(prev){
+      const pa=prev.reduce((a,s)=>a+s.score,0)/prev.length||0;
+      const pc=prev.reduce((a,s)=>a+s.claimed_pct,0)/prev.length||0;
+      const pta=prev.filter(s=>getTier(activeCountry,activeProg,s.score)==='A').length;
+      set('st-score-d',delta(avg-pa,'',1));
+      set('st-claimed-d',delta(avgC-pc,'%'));
+      set('st-a-d',delta(ta-pta,'',0));
+    } else {
+      ['st-score-d','st-claimed-d','st-a-d'].forEach(id=>set(id,''));
+    }
+  } else {
+    const avg=curr.reduce((a,s)=>a+s.score,0)/curr.length||0;
+    const avgT=curr.reduce((a,s)=>a+s.ttb,0)/curr.length||0;
+    const ta=curr.filter(s=>getTier(activeCountry,activeProg,s.score)==='A').length;
+    const td=curr.filter(s=>getTier(activeCountry,activeProg,s.score)==='D').length;
+    set('st-score',avg.toFixed(0));
+    set('st-claimed',avgT.toFixed(2)+'h');
+    set('st-a',ta);set('st-d',td);
+    if(prev){
+      const pa=prev.reduce((a,s)=>a+s.score,0)/prev.length||0;
+      set('st-score-d',delta(avg-pa,'',1));
+      set('st-claimed-d','');set('st-a-d','');
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ALERT ENGINE
+// ═══════════════════════════════════════════════════════════════
+function computeAlerts(sw){
+  if(activeProg!=='sfs')return[];
+  const wks=getWeekLabels(),alerts=[];
+  if(wks.length<2)return alerts;
+  const allIds=new Set();
+  wks.forEach(w=>{if(sw[w])sw[w].forEach(s=>allIds.add(s.id));});
+  const ct=getClaimedTarget(activeCountry);
+  allIds.forEach(id=>{
+    const hist=wks.map(w=>{const s=sw[w]&&sw[w].find(x=>x.id===id);return s?{week:w,...s}:null;}).filter(Boolean);
+    if(hist.length<2)return;
+    const name=hist[0].name,lat=hist[hist.length-1],prev=hist[hist.length-2];
+    const ord={A:4,B:3,C:2,D:1};
+    if(hist.length>=3){const r=hist.slice(-3);if(r.every(e=>getTier(activeCountry,activeProg,e.score)==='D'))alerts.push({sev:'high',icon:'🔴',store:name,id,msg:'Tier D for '+hist.filter(e=>getTier(activeCountry,activeProg,e.score)==='D').length+' consecutive weeks'});}
+    const drop=ord[getTier(activeCountry,activeProg,prev.score)]-ord[getTier(activeCountry,activeProg,lat.score)];
+    if(drop>=2)alerts.push({sev:'high',icon:'🔴',store:name,id,msg:'Dropped '+drop+' tiers ('+getTier(activeCountry,activeProg,prev.score)+'→'+getTier(activeCountry,activeProg,lat.score)+')'});
+    else if(drop===1)alerts.push({sev:'med',icon:'🟡',store:name,id,msg:'Tier drop: '+getTier(activeCountry,activeProg,prev.score)+' → '+getTier(activeCountry,activeProg,lat.score)});
+    if(prev.score-lat.score>15&&drop===0)alerts.push({sev:'med',icon:'🟡',store:name,id,msg:'Score fell '+(prev.score-lat.score).toFixed(0)+' pts'});
+    if(lat.claimed_pct<ct)alerts.push({sev:'med',icon:'🟡',store:name,id,msg:'% claimed below target: '+lat.claimed_pct.toFixed(1)+'% (target: '+ct+'%)'});
+    const rise=ord[getTier(activeCountry,activeProg,lat.score)]-ord[getTier(activeCountry,activeProg,prev.score)];
+    if(rise>=1)alerts.push({sev:'low',icon:'🟢',store:name,id,msg:'Tier improved: '+getTier(activeCountry,activeProg,prev.score)+' → '+getTier(activeCountry,activeProg,lat.score)});
+  });
+  // Missing store
+  if(wks.length>=2){
+    const lw=wks[wks.length-1],pw=wks[wks.length-2];
+    const lIds=new Set((sw[lw]||[]).map(s=>s.id));
+    (sw[pw]||[]).forEach(s=>{if(!lIds.has(s.id))alerts.push({sev:'med',icon:'⚠️',store:s.name,id:s.id,msg:'Missing from '+lw+' (present in '+pw+')'});});
+  }
+  // Network floor
+  if(wks.length>=3){
+    const fl=getNetFloor(activeCountry);
+    const ra=wks.slice(-3).map(w=>{const sc=sw[w];return sc?sc.reduce((a,x)=>a+x.score,0)/sc.length:null;}).filter(v=>v!==null);
+    if(ra.length===3&&ra.every(v=>v<fl))alerts.push({sev:'high',icon:'🔴',store:'NETWORK',id:'__net__',msg:'Avg score below floor ('+fl+') for 3+ weeks: '+ra.map(v=>v.toFixed(0)).join(', ')});
+  }
+  alerts.sort((a,b)=>({high:0,med:1,low:2})[a.sev]-({high:0,med:1,low:2})[b.sev]);
+  return alerts;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DELTA HELPERS
+// ═══════════════════════════════════════════════════════════════
+function rDelta(d,sfx,dec){
+  if(d===null||d===undefined)return'<span class="delta delta-flat">—</span>';
+  const v=d.toFixed(dec!==undefined?dec:1),s=d>0?'+':'',cls=d>0.05?'delta-up':d<-0.05?'delta-dn':'delta-flat';
+  return`<span class="delta ${cls}">${s}${v}${sfx||''}</span>`;
+}
+function rRankDelta(curr,prev){
+  if(!prev)return'';
+  const d=prev.rank-curr.rank;
+  if(d>0)return`<span style="color:var(--green);font-size:10px">▲${d}</span>`;
+  if(d<0)return`<span style="color:var(--red);font-size:10px">▼${Math.abs(d)}</span>`;
+  return`<span style="color:var(--t2);font-size:10px">—</span>`;
+}
+function rTierChange(curr,prev){
+  if(!prev||prev===curr)return'';
+  const ord={A:4,B:3,C:2,D:1},up=ord[curr]>ord[prev];
+  return`<span style="font-size:10px;color:${up?'var(--green)':'var(--red)'};margin-left:4px">${up?'▲':'▼'}${prev}→${curr}</span>`;
+}
+function rSparkline(id,sw){
+  const scores=getWeekLabels().map(w=>{const st=sw[w]&&sw[w].find(x=>x.id===id);return st?st.score:null;}).filter(v=>v!==null);
+  if(scores.length<2)return'<span style="font-size:10px;color:var(--t2)">—</span>';
+  const W=54,H=18,mn=Math.min(...scores),mx=Math.max(...scores),rng=mx-mn||1;
+  const pts=scores.map((v,i)=>((i/(scores.length-1))*W).toFixed(1)+','+(H-((v-mn)/rng)*H).toFixed(1)).join(' ');
+  const last=scores[scores.length-1],p2=scores[scores.length-2];
+  const col=last>p2+0.5?'#4eff9a':last<p2-0.5?'#ff4d4d':'#555';
+  return`<span class="spark"><svg width="${W}" height="${H}" style="overflow:visible"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.5" stroke-linejoin="round"/></svg></span>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER CONTENT
+// ═══════════════════════════════════════════════════════════════
+function renderContent(){
+  const content=document.getElementById('content');
+  const sw=rescoreAll(),wks=getWeekLabels(),s=st();
+  if(!wks.length||!s.selectedWeeks.length){
+    content.innerHTML=`<div class="empty"><h2>No data yet</h2><p>Upload your first CSV to get started.</p><div class="upload-hint" onclick="triggerUpload()">↑ Upload ${activeProg.toUpperCase()} CSV</div></div>`;
+    renderStatBar([],null);
+    updateAlertBadge([]);
+    return;
+  }
+  s.selectedWeeks=s.selectedWeeks.filter(w=>s.weeklyData[w]);
+  if(!s.selectedWeeks.length)s.selectedWeeks=[wks[wks.length-1]];
+
+  const isPeriod=s.mode==='period'&&s.selectedWeeks.length>1;
+  let curr,prev=null;
+  if(isPeriod){
+    curr=avgPeriod(s.selectedWeeks,sw);
+    const pp=getPriorPeriod(s.selectedWeeks,wks);
+    if(pp.length)prev=avgPeriod(pp,sw);
+  } else {
+    const w=s.selectedWeeks[s.selectedWeeks.length-1];
+    curr=sw[w]||[];
+    const idx=wks.indexOf(w);
+    if(idx>0)prev=sw[wks[idx-1]]||null;
+  }
+
+  renderStatBar(curr,prev);
+  const alerts=computeAlerts(sw);
+  updateAlertBadge(alerts);
+
+  if(activeSection==='stores')content.innerHTML=renderStoresTable(curr,prev,sw,isPeriod,s);
+  else if(activeSection==='health')content.innerHTML=renderHealthHTML(sw,wks);
+  else if(activeSection==='movers')content.innerHTML=renderMoversHTML(sw,wks,s);
+  else if(activeSection==='alerts')content.innerHTML=renderAlertsHTML(alerts);
+  else if(activeSection==='overall')content.innerHTML=renderOverallHTML(sw,wks);
+
+  if(activeSection==='health')setTimeout(()=>drawHealthChart(sw,wks),60);
+  if(openDrawerId&&openDrawerCountry===activeCountry)openDrawer(openDrawerId);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STORES TABLE
+// ═══════════════════════════════════════════════════════════════
+function renderStoresTable(curr,prev,sw,isPeriod,s){
+  const ct=getClaimedTarget(activeCountry),spdT=getSpeedTarget(activeCountry),bagT=getBagTarget(activeCountry);
+  const bannerText=isPeriod
+    ?`Period avg: <strong>${s.selectedWeeks[0]} → ${s.selectedWeeks[s.selectedWeeks.length-1]}</strong>`
+    :`Showing <strong>${s.selectedWeeks[s.selectedWeeks.length-1]}</strong>`+(prev?` vs prior week`:'');
+
+  const isSFS=activeProg==='sfs';
+  const sa=col=>{const on=col===s.sortCol;return`<span class="sort-i ${on?'on':''}">${on?(s.sortDir===1?'↑':'↓'):''}</span>`;};
+
+  let filtered=curr.filter(st=>!s.searchTerm||st.name.toLowerCase().includes(s.searchTerm.toLowerCase())||st.id.toLowerCase().includes(s.searchTerm.toLowerCase()));
+  filtered=[...filtered].sort((a,b)=>{let av=a[s.sortCol]??0,bv=b[s.sortCol]??0;return s.sortDir*(av>bv?1:av<bv?-1:0);});
+
+  const rows=filtered.map(st=>{
+    const p=prev?prev.find(x=>x.id===st.id):null;
+    const tier=getTier(activeCountry,activeProg,st.score);
+    const pt=p?getTier(activeCountry,activeProg,p.score):null;
+    const col=scoreColor(tier);
+    const hasNote=(st()?.notes||{})[st.id]?.trim();
+    const rc=(st()?.rootCauses||{})[st.id]||'';
+    const noteState=activeProg==='sfs'?sfsState[activeCountry]:cncState[activeCountry];
+    const hasN=noteState.notes[st.id]?.trim();
+    const rcTag=noteState.rootCauses[st.id]?`<span class="rc-tag">${noteState.rootCauses[st.id]}</span>`:'';
+
+    if(isSFS){
+      const belowCt=st.claimed_pct<ct;
+      const overSpd=st.ttc>spdT;
+      return`<tr onclick="openDrawer('${st.id}')" style="${belowCt?'background:rgba(255,77,77,0.03)':''}">
+        <td><div class="rank-cell"><span class="metric" style="color:var(--t2)">${st.rank}</span>${rRankDelta(st,p)}</div></td>
+        <td><div class="store-name">${st.name}${hasN?'<span class="note-dot"></span>':''}${rcTag}</div><div class="store-id">${st.id}</div></td>
+        <td><div style="display:flex;align-items:center;gap:6px"><div class="score-bar-bg"><div class="score-bar-fill" style="width:${st.score.toFixed(0)}%;background:${col}"></div></div><span class="metric" style="color:${col}">${st.score.toFixed(0)}</span>${rDelta(p?st.score-p.score:null,'',1)}</div></td>
+        <td><span class="tier-badge tier-${tier}">${tier}</span>${rTierChange(tier,pt)}</td>
+        <td><span class="metric${belowCt?' style="color:var(--red)"':''}">${st.claimed_pct.toFixed(1)}%${belowCt?' ▼':''}</span> ${rDelta(p?st.claimed_pct-p.claimed_pct:null,'%')}</td>
+        <td><span class="metric">${st.reliability.toFixed(1)}%</span></td>
+        <td><span class="metric${overSpd?' style="color:var(--red)"':''}">${st.ttc.toFixed(2)}h${overSpd?' ▲':''}</span></td>
+        <td><span class="metric">${st.cpd.toFixed(1)}</span></td>
+        <td>${rSparkline(st.id,sw)}</td>
+      </tr>`;
+    } else {
+      const slowBag=st.ttb>bagT;
+      const hasMissed=(st.missed_rev||0)>0;
+      const ccy=CNC_CCY[activeCountry]||'';
+      return`<tr onclick="openDrawer('${st.id}')" style="${hasMissed?'background:rgba(255,77,77,0.03)':slowBag?'background:rgba(255,214,0,0.02)':''}">
+        <td><div class="rank-cell"><span class="metric" style="color:var(--t2)">${st.rank}</span>${rRankDelta(st,p)}</div></td>
+        <td><div class="store-name">${st.name}${hasN?'<span class="note-dot"></span>':''}${rcTag}</div><div class="store-id">${st.id}</div></td>
+        <td><div style="display:flex;align-items:center;gap:6px"><div class="score-bar-bg"><div class="score-bar-fill" style="width:${st.score.toFixed(0)}%;background:${col}"></div></div><span class="metric" style="color:${col}">${st.score.toFixed(0)}</span>${rDelta(p?st.score-p.score:null,'',1)}</div></td>
+        <td><span class="tier-badge tier-${tier}">${tier}</span>${rTierChange(tier,pt)}</td>
+        <td><span class="metric${slowBag?' style="color:var(--red)"':''}">${st.ttb.toFixed(2)}h${slowBag?' ▲':''}</span></td>
+        <td><span class="metric">${st.pct_bagged.toFixed(1)}%</span></td>
+        <td><span class="metric" style="color:var(--t2)">${st.claimed||0}</span></td>
+        <td>${hasMissed?`<span class="metric" style="color:var(--red)">${ccy} ${Math.round(st.missed_rev).toLocaleString()}</span>`:'<span style="color:var(--t3)">—</span>'}</td>
+        <td>${rSparkline(st.id,sw)}</td>
+      </tr>`;
+    }
+  }).join('');
+
+  const theadSfs=`<th onclick="doSort('rank')">Rank ${sa('rank')}</th><th onclick="doSort('name')">Store ${sa('name')}</th><th onclick="doSort('score')">Score ${sa('score')}</th><th>Tier</th><th onclick="doSort('claimed_pct')">% Claimed ${sa('claimed_pct')}</th><th onclick="doSort('reliability')">Reliability ${sa('reliability')}</th><th onclick="doSort('ttc')">Avg TTC ${sa('ttc')}</th><th onclick="doSort('cpd')">Ord/Day ${sa('cpd')}</th><th>Trend</th>`;
+  const theadCnc=`<th onclick="doSort('rank')">Rank ${sa('rank')}</th><th onclick="doSort('name')">Store ${sa('name')}</th><th onclick="doSort('score')">Score ${sa('score')}</th><th>Tier</th><th onclick="doSort('ttb')">Time to Bag ${sa('ttb')}</th><th onclick="doSort('pct_bagged')">% Bagged ${sa('pct_bagged')}</th><th onclick="doSort('claimed')">Volume ${sa('claimed')}</th><th onclick="doSort('missed_rev')">Missed Rev ${sa('missed_rev')}</th><th>Trend</th>`;
+
+  return`<div class="search-bar"><input type="text" class="search-input" placeholder="Search store..." value="${s.searchTerm}" oninput="doSearch(this.value)"></div>
+<div class="period-banner">${bannerText}</div>
+<div class="tbl-wrap"><table><thead><tr>${isSFS?theadSfs:theadCnc}</tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function doSort(col){
+  const s=st();
+  if(s.sortCol===col)s.sortDir*=-1;else{s.sortCol=col;s.sortDir=col==='rank'?1:-1;}
+  renderContent();
+}
+function doSearch(v){st().searchTerm=v;renderContent();}
+
+// ═══════════════════════════════════════════════════════════════
+// NETWORK HEALTH
+// ═══════════════════════════════════════════════════════════════
+function renderHealthHTML(sw,wks){
+  if(wks.length<1)return`<div class="section-pad"><div class="empty"><h2>Not enough data</h2><p>Load at least 2 weeks to see network health.</p></div></div>`;
+  const avgs=wks.map(w=>{const sc=sw[w];return sc?+(sc.reduce((a,x)=>a+x.score,0)/sc.length).toFixed(1):0;});
+  let cards='';
+  if(wks.length>=2){
+    const curr=sw[wks[wks.length-1]]||[],prev=sw[wks[wks.length-2]]||[];
+    let imp=0,dec=0,unch=0;
+    curr.forEach(st=>{const p=prev.find(x=>x.id===st.id);if(!p)return;const d=st.score-p.score;if(d>1)imp++;else if(d<-1)dec++;else unch++;});
+    cards=`<div class="health-cards">
+      <div class="hcard"><div class="hcard-val" style="color:var(--green)">${imp}</div><div class="hcard-lbl">Improved</div></div>
+      <div class="hcard"><div class="hcard-val" style="color:var(--red)">${dec}</div><div class="hcard-lbl">Declined</div></div>
+      <div class="hcard"><div class="hcard-val">${unch}</div><div class="hcard-lbl">Unchanged</div></div>
+    </div>`;
+  }
+  return`<div class="section-pad">${cards}<div class="panel"><div class="panel-title">Network Avg Score — ${wks[0]} to ${wks[wks.length-1]}</div><div class="chart-container"><canvas id="health-chart" role="img" aria-label="Network average score trend"></canvas></div></div></div>`;
+}
+
+function drawHealthChart(sw,wks){
+  const canvas=document.getElementById('health-chart');
+  if(!canvas)return;
+  if(healthChart){healthChart.destroy();}
+  const avgs=wks.map(w=>{const sc=sw[w];return sc?+(sc.reduce((a,x)=>a+x.score,0)/sc.length).toFixed(1):0;});
+  const ptColors=avgs.map(v=>{const t=getTier(activeCountry,activeProg,v);return t==='A'?'#4eff9a':t==='B'?'#4f8ef7':t==='C'?'#FFD600':'#ff4d4d';});
+  healthChart=new Chart(canvas,{
+    type:'line',
+    data:{labels:wks,datasets:[{data:avgs,borderColor:'#FFE600',borderWidth:2,pointBackgroundColor:ptColors,pointRadius:5,tension:0.3,fill:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+      y:{min:0,max:100,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#555',font:{family:'DM Mono',size:10}}},
+      x:{grid:{display:false},ticks:{color:'#555',font:{family:'DM Mono',size:10}}}
+    }}
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MOVERS
+// ═══════════════════════════════════════════════════════════════
+function renderMoversHTML(sw,wks,s){
+  if(wks.length<2)return`<div class="section-pad"><div class="empty"><h2>Not enough data</h2><p>Load at least 2 weeks.</p></div></div>`;
+  const activeWk=s.selectedWeeks[s.selectedWeeks.length-1];
+  const idx=wks.indexOf(activeWk);
+  const curr=sw[activeWk]||[];
+  const prev=idx>0?sw[wks[idx-1]]||null:null;
+  if(!prev)return`<div class="section-pad"><div class="empty"><h2>No previous week</h2><p>Select a week with prior data.</p></div></div>`;
+  const deltas=curr.map(st=>{const p=prev.find(x=>x.id===st.id);return{...st,delta:p?st.score-p.score:0};}).filter(st=>Math.abs(st.delta)>0.05);
+  deltas.sort((a,b)=>b.delta-a.delta);
+  const mr=(st,i)=>`<div class="mover-row" onclick="openDrawer('${st.id}')"><span style="font-size:11px;color:var(--t2);width:18px">${i+1}</span><div style="flex:1"><div class="store-name" style="font-size:11px">${st.name}</div><div class="store-id">${st.id}</div></div><span class="mover-delta" style="color:${st.delta>0?'var(--green)':'var(--red)'}">${st.delta>0?'+':''}${st.delta.toFixed(1)}</span></div>`;
+  const up=deltas.slice(0,5),dn=[...deltas].sort((a,b)=>a.delta-b.delta).slice(0,5);
+  return`<div class="section-pad"><div class="two-col">
+    <div class="panel"><div class="panel-title" style="color:var(--green)">Most Improved</div>${up.length?up.map(mr).join(''):'<p style="font-size:11px;color:var(--t2)">No data</p>'}</div>
+    <div class="panel"><div class="panel-title" style="color:var(--red)">Most Declined</div>${dn.length?dn.map(mr).join(''):'<p style="font-size:11px;color:var(--t2)">No data</p>'}</div>
+  </div></div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ALERTS
+// ═══════════════════════════════════════════════════════════════
+function renderAlertsHTML(alerts){
+  if(!alerts.length)return`<div class="section-pad"><div class="empty"><h2>No alerts</h2><p>Network is healthy. Load at least 2 weeks to enable alerting.</p></div></div>`;
+  return`<div class="section-pad"><div class="panel"><div class="panel-title">Active Alerts</div>${alerts.map(a=>`<div class="alert-item alert-sev-${a.sev}" onclick="openDrawer('${a.id}')"><div><div class="alert-store">${a.store}</div><div class="alert-msg">${a.msg}</div></div></div>`).join('')}</div></div>`;
+}
+
+function updateAlertBadge(alerts){
+  const count=alerts.filter(a=>a.sev!=='low').length;
+  const b=document.getElementById('alert-badge');
+  if(count>0){b.textContent=count;b.style.display='inline';}
+  else b.style.display='none';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// OVERALL
+// ═══════════════════════════════════════════════════════════════
+function renderOverallHTML(sw,wks){
+  if(!wks.length)return`<div class="section-pad"><div class="empty"><h2>No data yet</h2></div></div>`;
+  const sm={};
+  wks.forEach(w=>{(sw[w]||[]).forEach(st=>{if(!sm[st.id])sm[st.id]={id:st.id,name:st.name,scores:[],vals:[],wcount:0};sm[st.id].scores.push(st.score);sm[st.id].vals.push(st);sm[st.id].wcount++;});});
+  const mean=arr=>arr.reduce((a,b)=>a+b,0)/arr.length;
+  const stores=Object.values(sm).map(st=>({id:st.id,name:st.name,wcount:st.wcount,score:mean(st.scores),trend:st.scores.length>1?st.scores[st.scores.length-1]-st.scores[0]:0,...(activeProg==='sfs'?{claimed_pct:mean(st.vals.map(v=>v.claimed_pct||0)),reliability:mean(st.vals.map(v=>v.reliability||0))}:{ttb:mean(st.vals.map(v=>v.ttb||0)),pct_bagged:mean(st.vals.map(v=>v.pct_bagged||0))})}));
+  stores.sort((a,b)=>b.score-a.score);stores.forEach((st,i)=>st.rank=i+1);
+  const rows=stores.map(st=>{
+    const tier=getTier(activeCountry,activeProg,st.score),col=scoreColor(tier);
+    const st_notes=activeProg==='sfs'?sfsState[activeCountry]:cncState[activeCountry];
+    const hasN=st_notes.notes[st.id]?.trim();
+    const trendCol=st.trend>2?'var(--green)':st.trend<-2?'var(--red)':'var(--t2)';
+    const kpis=activeProg==='sfs'?`<td class="metric">${st.claimed_pct.toFixed(1)}%</td><td class="metric">${st.reliability.toFixed(1)}%</td>`:`<td class="metric">${st.ttb.toFixed(2)}h</td><td class="metric">${st.pct_bagged.toFixed(1)}%</td>`;
+    return`<tr onclick="openDrawer('${st.id}')"><td><span class="metric" style="color:var(--t2)">${st.rank}</span></td><td><div class="store-name">${st.name}${hasN?'<span class="note-dot"></span>':''}</div><div class="store-id">${st.id}</div></td><td><div style="display:flex;align-items:center;gap:6px"><div class="score-bar-bg"><div class="score-bar-fill" style="width:${st.score.toFixed(0)}%;background:${col}"></div></div><span class="metric" style="color:${col}">${st.score.toFixed(0)}</span></div></td><td><span class="tier-badge tier-${tier}">${tier}</span></td>${kpis}<td style="font-size:11px;color:${trendCol}">${st.trend>0?'+':''}${st.trend.toFixed(1)}</td><td style="font-size:10px;color:var(--t2)">${st.wcount}w</td></tr>`;
+  }).join('');
+  const isSFS=activeProg==='sfs';
+  return`<div class="period-banner">All-time average · <strong>${wks[0]} to ${wks[wks.length-1]}</strong> · ${wks.length} weeks</div><div class="tbl-wrap"><table><thead><tr><th>Rank</th><th>Store</th><th>Avg Score</th><th>Tier</th>${isSFS?'<th>Avg Claimed</th><th>Avg Reliability</th>':'<th>Avg TTB</th><th>Avg Bagged</th>'}<th>Trend</th><th>Weeks</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DRAWER
+// ═══════════════════════════════════════════════════════════════
+function openDrawer(storeId){
+  openDrawerId=storeId;openDrawerCountry=activeCountry;
+  const sw=rescoreAll(),wks=getWeekLabels();
+  const allHist=wks.map(w=>{const s=sw[w]&&sw[w].find(x=>x.id===storeId);return s?{week:w,...s}:null;}).filter(Boolean);
+  if(!allHist.length)return;
+  const lat=allHist[allHist.length-1],prev=allHist.length>1?allHist[allHist.length-2]:null;
+  const st_notes=activeProg==='sfs'?sfsState[activeCountry]:cncState[activeCountry];
+  const tier=getTier(activeCountry,activeProg,lat.score);
+  document.getElementById('drawer-title').textContent=lat.name;
+  document.getElementById('drawer-sub').textContent=`${lat.id} · ${activeCountry} · ${activeProg.toUpperCase()} · ${allHist.length} week${allHist.length!==1?'s':''} of data`;
+  const isSFS=activeProg==='sfs';
+  const kpis=isSFS?[
+    {label:'Score',val:lat.score.toFixed(0),delta:prev?lat.score-prev.score:null,sfx:'',dec:1},
+    {label:'Rank',val:'#'+lat.rank,delta:prev?prev.rank-lat.rank:null,sfx:'',dec:0},
+    {label:'% Claimed',val:lat.claimed_pct.toFixed(1)+'%',delta:prev?lat.claimed_pct-prev.claimed_pct:null,sfx:'%'},
+    {label:'Avg TTC',val:lat.ttc.toFixed(2)+'h',delta:prev?-(lat.ttc-prev.ttc):null,sfx:'h'},
+    {label:'Orders/day',val:lat.cpd.toFixed(1),delta:prev?lat.cpd-prev.cpd:null,sfx:''},
+    {label:'Reliability',val:lat.reliability.toFixed(1)+'%',delta:prev?lat.reliability-prev.reliability:null,sfx:'%'}
+  ]:[
+    {label:'Score',val:lat.score.toFixed(0),delta:prev?lat.score-prev.score:null,sfx:'',dec:1},
+    {label:'Rank',val:'#'+lat.rank,delta:prev?prev.rank-lat.rank:null,sfx:'',dec:0},
+    {label:'Time to Bag',val:lat.ttb.toFixed(2)+'h',delta:prev?-(lat.ttb-prev.ttb):null,sfx:'h'},
+    {label:'% Bagged',val:lat.pct_bagged.toFixed(1)+'%',delta:prev?lat.pct_bagged-prev.pct_bagged:null,sfx:'%'},
+    {label:'Volume',val:lat.claimed||0,delta:prev?(lat.claimed||0)-(prev.claimed||0):null,sfx:''},
+    {label:'Missed Rev',val:(lat.missed_rev>0?CNC_CCY[activeCountry]+' '+Math.round(lat.missed_rev).toLocaleString():'—'),delta:null,sfx:''}
+  ];
+  const kpiHtml=kpis.map(k=>`<div class="kpi-card"><div class="kpi-label">${k.label}</div><div class="kpi-val">${k.val}</div><div class="kpi-delta">${rDelta(k.delta,k.sfx,k.dec!==undefined?k.dec:1)}</div></div>`).join('');
+  const cn=st_notes.notes[storeId]||'';
+  const rc=st_notes.rootCauses[storeId]||'';
+  const histRows=[...allHist].reverse().map(e=>{
+    const t=getTier(activeCountry,activeProg,e.score);
+    return`<tr><td>${e.week}</td><td>#${e.rank}</td><td style="color:${scoreColor(t)}">${e.score.toFixed(0)}</td><td><span class="tier-badge tier-${t}" style="font-size:9px">${t}</span></td>${isSFS?`<td>${e.claimed_pct.toFixed(1)}%</td><td>${e.ttc.toFixed(2)}h</td>`:`<td>${e.ttb.toFixed(2)}h</td><td>${e.pct_bagged.toFixed(1)}%</td>`}</tr>`;
+  }).join('');
+  document.getElementById('drawer-body').innerHTML=`
+    <div class="dsec">Latest vs previous week</div>
+    <div class="kpi-grid">${kpiHtml}</div>
+    <div class="dsec">Score trend</div>
+    <div class="drawer-chart"><canvas id="dchart" role="img" aria-label="Score trend for ${lat.name}"></canvas></div>
+    <div class="dsec">Root cause</div>
+    <select class="rc-select" id="rc-sel"><option value="">Not assessed</option>${['Staffing','Training','Technical','Process','Stock availability','Awareness','Structural'].map(o=>`<option value="${o}"${rc===o?' selected':''}>${o}</option>`).join('')}</select>
+    <div class="dsec">Notes</div>
+    <textarea class="note-area" id="note-ta" placeholder="Add notes...">${cn}</textarea>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+      <button class="btn btn-primary" onclick="saveNote('${storeId}')">Save note</button>
+      <span class="note-saved" id="note-saved">Saved ✓</span>
+    </div>
+    <div class="dsec">Full history</div>
+    <table class="hist-table"><thead><tr><th>Week</th><th>Rank</th><th>Score</th><th>Tier</th>${isSFS?'<th>Claimed</th><th>TTC</th>':'<th>TTB</th><th>Bagged</th>'}</tr></thead><tbody>${histRows}</tbody></table>`;
+  if(drawerChart){drawerChart.destroy();drawerChart=null;}
+  setTimeout(()=>{
+    const ctx=document.getElementById('dchart');if(!ctx)return;
+    const scores=allHist.map(e=>parseFloat(e.score.toFixed(1)));
+    const ptc=scores.map(v=>{const t=getTier(activeCountry,activeProg,v);return scoreColor(t).replace('var(','').replace(')','');});
+    // Can't use CSS vars in Chart.js, map to hex
+    const colMap={'--sa':'#4eff9a','--sb':'#4f8ef7','--sc':'#FFD600','--sd':'#ff4d4d'};
+    const ptColors=scores.map(v=>{const t=getTier(activeCountry,activeProg,v);return t==='A'?'#4eff9a':t==='B'?'#4f8ef7':t==='C'?'#FFD600':'#ff4d4d';});
+    drawerChart=new Chart(ctx,{type:'line',data:{labels:allHist.map(e=>e.week),datasets:[{data:scores,borderColor:'#FFE600',borderWidth:2,pointBackgroundColor:ptColors,pointRadius:5,tension:0.3,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:100,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#555',font:{family:'DM Mono',size:10}}},x:{grid:{display:false},ticks:{color:'#555',font:{family:'DM Mono',size:10}}}}}});
+  },50);
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+}
+
+async function saveNote(storeId){
+  const val=document.getElementById('note-ta').value;
+  const rc=document.getElementById('rc-sel')?.value||'';
+  const st_notes=activeProg==='sfs'?sfsState[activeCountry]:cncState[activeCountry];
+  st_notes.notes[storeId]=val;
+  if(rc)st_notes.rootCauses[storeId]=rc;else delete st_notes.rootCauses[storeId];
+  const tbl=activeProg==='sfs'?'sfs_notes':'cnc_notes';
+  showSync(true);
+  try{
+    await dbUpsert(tbl,[{country:activeCountry,store_id:storeId,note:val,root_cause:rc||null,updated_at:new Date().toISOString()}]);
+    const saved=document.getElementById('note-saved');
+    saved.style.display='inline';setTimeout(()=>saved.style.display='none',2000);
+    renderContent();
+  }catch(e){alert('Save failed: '+e.message);}
+  showSync(false);
+}
+
+function closeDrawer(){
+  openDrawerId=null;openDrawerCountry=null;
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UPLOAD
+// ═══════════════════════════════════════════════════════════════
+function triggerUpload(){
+  const wks=getWeekLabels();
+  const suggested=wks.length?suggestNext(wks[wks.length-1]):'W01 2026';
+  document.getElementById('upload-label').value=suggested;
+  document.getElementById('upload-label').classList.remove('warn');
+  document.getElementById('upload-warn').classList.remove('show');
+  document.getElementById('file-chosen').classList.remove('show');
+  document.getElementById('file-chosen').textContent='';
+  document.getElementById('upload-title').textContent='Upload '+activeProg.toUpperCase()+' CSV — '+activeCountry;
+  activeUploadFile=null;
+  checkUploadLabel();
+  document.getElementById('upload-overlay').classList.add('open');
+}
+
+function checkUploadLabel(){
+  const lbl=document.getElementById('upload-label').value.trim();
+  const s=st();
+  const exists=lbl&&s.weeklyData.hasOwnProperty(lbl);
+  document.getElementById('upload-label').classList.toggle('warn',exists);
+  document.getElementById('upload-warn').classList.toggle('show',exists);
+}
+
+function closeUpload(){document.getElementById('upload-overlay').classList.remove('open');}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const fileInput=document.getElementById('upload-file');
+  fileInput.addEventListener('change',e=>{
+    const f=e.target.files[0];if(!f)return;
+    activeUploadFile=f;
+    const fc=document.getElementById('file-chosen');
+    fc.textContent='✓ '+f.name;fc.classList.add('show');
+    fileInput.value='';
+  });
+  const drop=document.getElementById('upload-drop');
+  drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag');});
+  drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+  drop.addEventListener('drop',e=>{
+    e.preventDefault();drop.classList.remove('drag');
+    const f=e.dataTransfer.files[0];if(!f)return;
+    activeUploadFile=f;
+    const fc=document.getElementById('file-chosen');
+    fc.textContent='✓ '+f.name;fc.classList.add('show');
+  });
+});
+
+async function doUpload(){
+  const label=document.getElementById('upload-label').value.trim();
+  if(!label){alert('Enter a week label.');return;}
+  if(!activeUploadFile){alert('Select a CSV file.');return;}
+  const s=st();
+  if(s.weeklyData.hasOwnProperty(label)){if(!confirm('"'+label+'" exists. Overwrite?'))return;}
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    const stores=activeProg==='sfs'?parseSfsCSV(ev.target.result):parseCncCSV(ev.target.result);
+    if(!stores.length){alert('Could not parse CSV. Check column headers match expected format.');return;}
+    showSync(true);
+    try{
+      const tbl=activeProg==='sfs'?'sfs_data':'cnc_data';
+      await dbDelete(tbl,'country=eq.'+activeCountry+'&week=eq.'+encodeURIComponent(label));
+      if(activeProg==='sfs'){
+        await dbInsert(tbl,stores.map(st=>({country:activeCountry,week:label,store_id:st.id,store_name:st.name,reliability:st.reliability,claimed_pct:st.claimed_pct,cpd:st.cpd,ttc:st.ttc,dur:st.dur,speed_ratio:st.speed_ratio})));
+      } else {
+        await dbInsert(tbl,stores.map(st=>({country:activeCountry,week:label,store_id:st.id,store_name:st.name,claimed:st.claimed,unclaimed:st.unclaimed,unavail:st.unavail,pct_bagged:st.pct_bagged,ttb:st.ttb,missed_rev:st.missed_rev,bagged_rev:st.bagged_rev})));
+      }
+      s.weeklyData[label]=stores;s.selectedWeeks=[label];
+      closeUpload();renderAll();
+      setDBStatus(true,'Saved ✓');showToast(stores.length+' stores scored for '+label,'success');
+    }catch(e){alert('Upload failed: '+e.message);}
+    showSync(false);
+  };
+  reader.readAsText(activeUploadFile);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EXPORT & PRINT
+// ═══════════════════════════════════════════════════════════════
+function doExport(){
+  const sw=rescoreAll(),s=st(),wks=getWeekLabels();
+  const weeksToExport=s.selectedWeeks.length>1?s.selectedWeeks:[s.selectedWeeks[s.selectedWeeks.length-1]];
+  if(!weeksToExport.length){showToast('No data to export','info');return;}
+  const isSFS=activeProg==='sfs';
+  const hdrs=isSFS?['Week','Rank','Store ID','Store Name','Score','Score Delta','Tier','% Claimed','Reliability','Avg TTC','Ord/Day','Note']:['Week','Rank','Store ID','Store Name','Score','Score Delta','Tier','TTB','% Bagged','Volume','Missed Rev','Note'];
+  const allRows=[];
+  weeksToExport.forEach(w=>{
+    const curr=sw[w]||[];const idx=wks.indexOf(w);const prev=idx>0?sw[wks[idx-1]]||null:null;
+    const st_notes=activeProg==='sfs'?sfsState[activeCountry]:cncState[activeCountry];
+    curr.sort((a,b)=>a.rank-b.rank).forEach(st=>{
+      const p=prev?prev.find(x=>x.id===st.id):null;
+      const d=p?(st.score-p.score>0?'+':'')+(st.score-p.score).toFixed(1):'--';
+      const note=(st_notes.notes[st.id]||'').replace(/,/g,';').replace(/\n/g,' ');
+      if(isSFS)allRows.push([w,st.rank,st.id,st.name,st.score.toFixed(0),d,getTier(activeCountry,activeProg,st.score),st.claimed_pct.toFixed(1)+'%',st.reliability.toFixed(1)+'%',st.ttc.toFixed(2)+'h',st.cpd.toFixed(1),note]);
+      else allRows.push([w,st.rank,st.id,st.name,st.score.toFixed(0),d,getTier(activeCountry,activeProg,st.score),st.ttb.toFixed(2)+'h',st.pct_bagged.toFixed(1)+'%',st.claimed||0,(st.missed_rev||0).toFixed(2),note]);
+    });
+  });
+  const csv=[hdrs,...allRows].map(r=>r.map(v=>'"'+v+'"').join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=activeProg.toUpperCase()+'_'+activeCountry+'_'+weeksToExport[0]+(weeksToExport.length>1?'-'+weeksToExport[weeksToExport.length-1]:'')+'.csv';
+  a.click();
+  showToast('Export downloaded','success');
+}
+
+function doPrint(){
+  const sw=rescoreAll(),s=st(),wks=getWeekLabels();
+  if(!wks.length){showToast('No data to print','info');return;}
+  const w=s.selectedWeeks[s.selectedWeeks.length-1];
+  const curr=sw[w]||[];
+  const idx=wks.indexOf(w);const prev=idx>0?sw[wks[idx-1]]||null:null;
+  const st_notes=activeProg==='sfs'?sfsState[activeCountry]:cncState[activeCountry];
+  const isSFS=activeProg==='sfs';
+  const now=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  const tc=t=>t==='A'?'#00a85a':t==='B'?'#3b82f6':t==='C'?'#f59e0b':'#ef4444';
+  const ds=(d,sfx)=>{if(!d&&d!==0)return'';const s=d>0?'+':'';const col=d>0.05?'#00a85a':d<-0.05?'#ef4444':'#888';return`<span style="color:${col};font-size:10px">${s}${d.toFixed(1)}${sfx||''}</span>`;};
+  const rows=curr.slice().sort((a,b)=>a.rank-b.rank).map(st=>{
+    const p=prev?prev.find(x=>x.id===st.id):null;
+    const tier=getTier(activeCountry,activeProg,st.score);
+    const note=(st_notes.notes[st.id]||'').substring(0,60);
+    const rc=st_notes.rootCauses[st.id]||'';
+    if(isSFS){const bt=st.claimed_pct<getClaimedTarget(activeCountry);return`<tr style="background:${bt?'#fff0f0':'#fff'}"><td>${st.rank}</td><td><strong>${st.name}</strong>${rc?`<br><span style="font-size:9px;color:#888">${rc}</span>`:''}${note?`<br><span style="font-size:9px;color:#555">${note}</span>`:''}</td><td style="text-align:center;color:${tc(tier)};font-weight:700">${st.score.toFixed(0)}</td><td style="text-align:center;color:${tc(tier)};font-weight:700">${tier}</td><td style="${bt?'color:#ef4444;font-weight:600':''}">${st.claimed_pct.toFixed(1)}%${bt?' ▼':''}</td><td>${st.reliability.toFixed(1)}%</td><td>${st.ttc.toFixed(2)}h</td><td>${st.cpd.toFixed(1)}</td></tr>`;}
+    else{const ccy=CNC_CCY[activeCountry]||'';const sb=st.ttb>getBagTarget(activeCountry);const hm=(st.missed_rev||0)>0;return`<tr style="background:${hm?'#fff0f0':sb?'#fffbf0':'#fff'}"><td>${st.rank}</td><td><strong>${st.name}</strong>${rc?`<br><span style="font-size:9px;color:#888">${rc}</span>`:''}${note?`<br><span style="font-size:9px;color:#555">${note}</span>`:''}</td><td style="text-align:center;color:${tc(tier)};font-weight:700">${st.score.toFixed(0)}</td><td style="text-align:center;color:${tc(tier)};font-weight:700">${tier}</td><td style="${sb?'color:#f59e0b;font-weight:600':''}">${st.ttb.toFixed(2)}h</td><td>${st.pct_bagged.toFixed(1)}%</td><td>${hm?`<span style="color:#ef4444;font-weight:600">${ccy} ${Math.round(st.missed_rev).toLocaleString()}</span>`:'—'}</td></tr>`;}
+  }).join('');
+  const tHead=isSFS?'<th>#</th><th>Store</th><th>Score</th><th>Tier</th><th>% Claimed</th><th>Reliability</th><th>TTC</th><th>Ord/Day</th>':'<th>#</th><th>Store</th><th>Score</th><th>Tier</th><th>TTB</th><th>% Bagged</th><th>Missed Rev</th>';
+  const avgScore=curr.reduce((a,s)=>a+s.score,0)/curr.length||0;
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${activeProg.toUpperCase()} Report - ${activeCountry} - ${w}</title><style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Arial,sans-serif;font-size:12px;color:#1a1a1a;background:#fff;padding:20px;}@media print{body{padding:0;}.noprint{display:none!important;}}.hdr{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:10px;border-bottom:3px solid #FFE600;margin-bottom:14px;}.hdr h1{font-size:20px;font-weight:900;text-transform:uppercase;letter-spacing:1px;}.hdr p{font-size:10px;color:#888;margin-top:3px;}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}.stat{background:#f8f8f8;border-top:2px solid #FFE600;padding:8px 10px;}.stat-val{font-size:20px;font-weight:800;}.stat-lbl{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}table{width:100%;border-collapse:collapse;font-size:11px;}thead th{background:#1a1a1a;color:#fff;padding:5px 8px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.8px;}tbody tr{border-bottom:1px solid #f0f0f0;}tbody td{padding:5px 8px;vertical-align:top;}.footer{margin-top:14px;padding-top:8px;border-top:1px solid #eee;font-size:9px;color:#aaa;display:flex;justify-content:space-between;}</style></head><body>
+<div class="hdr"><div><h1>${activeProg==='sfs'?'Ship From Store':'Click & Collect'}</h1><p>Weekly Performance Report · ${activeCountry} · ${w}${prev?' vs '+wks[idx-1]:''}</p></div><div style="text-align:right"><strong>JD Sports</strong><br><span style="font-size:10px;color:#888">${now}</span></div></div>
+<div class="stats"><div class="stat"><div class="stat-lbl">Avg score</div><div class="stat-val">${avgScore.toFixed(0)}</div></div><div class="stat"><div class="stat-lbl">Stores</div><div class="stat-val">${curr.length}</div></div><div class="stat"><div class="stat-lbl">Tier A</div><div class="stat-val" style="color:#00a85a">${curr.filter(s=>getTier(activeCountry,activeProg,s.score)==='A').length}</div></div><div class="stat"><div class="stat-lbl">Tier D</div><div class="stat-val" style="color:#ef4444">${curr.filter(s=>getTier(activeCountry,activeProg,s.score)==='D').length}</div></div></div>
+<table><thead><tr>${tHead}</tr></thead><tbody>${rows}</tbody></table>
+<div class="footer"><span>JD Sports ${activeProg.toUpperCase()} · ${activeCountry} · ${now}</span><span>Scores relative to network</span></div>
+<div class="noprint" style="margin-top:16px;text-align:center"><button onclick="window.print()" style="background:#FFE600;border:none;padding:10px 24px;font-weight:700;font-size:13px;cursor:pointer">Print / Save PDF</button> <button onclick="window.close()" style="background:#eee;border:none;padding:10px 24px;font-weight:700;font-size:13px;cursor:pointer;margin-left:8px">Close</button></div>
+</body></html>`;
+  const win=window.open('','_blank','width=900,height:700');
+  if(!win){showToast('Allow popups for print','info');return;}
+  win.document.write(html);win.document.close();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SETTINGS MODAL
+// ═══════════════════════════════════════════════════════════════
+function openSettings(){
+  document.getElementById('settings-btn').classList.add('active');
+  const c=activeCountry==='future'?'MY':activeCountry;
+  const prog=activeProg;
+  const sfx=c==='MY'?'':'-'+c;
+  const pfx=prog==='cnc'?'c':'';
+  document.getElementById('settings-title').textContent='Settings — '+c+' '+prog.toUpperCase();
+  const isSFS=prog==='sfs';
+  const lockNote=`<div class="modal-lock-note">Settings are password-protected. Changes are applied immediately for the current session. Use "Save config" to persist weights to the database linked to a specific week.</div>`;
+  let html=lockNote;
+  if(isSFS){
+    html+=`<div class="modal-section">
+      <div class="modal-section-title">Score weights</div>
+      ${sliderRow('w1'+sfx,'% Claimed orders','35','%',0,60,5)}
+      ${sliderRow('w2'+sfx,'Candidate reliability','20','%',0,60,5)}
+      ${sliderRow('w3'+sfx,'Speed (time vs window)','25','%',0,60,5)}
+      ${sliderRow('w4'+sfx,'Claimed orders / day','20','%',0,60,5)}
+      <div class="weight-total ok" id="wtot${sfx}">Total: 100% ✓</div>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">Tier thresholds</div>
+      ${sliderRow('ta'+sfx,'Tier A — High','65','+',50,95,5,'tier-a')}
+      ${sliderRow('tb'+sfx,'Tier B — On track','45','–',25,90,5,'tier-b')}
+      ${sliderRow('tc'+sfx,'Tier C — Attention','25','–',5,85,5,'tier-c')}
+      <div class="tier-d-note"><span class="tier-dot" style="background:var(--sd)"></span> Tier D = below C threshold</div>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">Targets</div>
+      ${sliderRow('ct'+sfx,'Min % claimed target','40','%',10,80,5)}
+      ${sliderRow('st'+sfx,'Speed target (hours)','2','h',0.5,6,0.5)}
+      ${sliderRow('nf'+sfx,'Network floor score','30','',10,60,5)}
+    </div>`;
+  } else {
+    html+=`<div class="modal-section">
+      <div class="modal-section-title">Score weights</div>
+      ${sliderRow('cw1'+sfx,'Time to bag','70','%',0,100,10)}
+      ${sliderRow('cw2'+sfx,'% Bagged','30','%',0,100,10)}
+      <div class="weight-total ok" id="cwtot${sfx}">Total: 100% ✓</div>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">Tier thresholds</div>
+      ${sliderRow('cta'+sfx,'Tier A — High','65','+',50,95,5,'tier-a')}
+      ${sliderRow('ctb'+sfx,'Tier B — On track','45','–',25,90,5,'tier-b')}
+      ${sliderRow('ctc'+sfx,'Tier C — Attention','25','–',5,85,5,'tier-c')}
+      <div class="tier-d-note"><span class="tier-dot" style="background:var(--sd)"></span> Tier D = below C threshold</div>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">Bag time target</div>
+      ${sliderRow('cbt'+sfx,'Flag stores over','2','h',0.5,6,0.5)}
+    </div>`;
+  }
+  html+=`<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+    <button class="btn-ghost btn" onclick="closeSettings()">Close</button>
+    <button class="btn-primary btn" onclick="saveConfig()">Save config to DB</button>
+  </div>`;
+  document.getElementById('settings-body').innerHTML=html;
+  wireSliders(c,prog,sfx,pfx,isSFS);
+  document.getElementById('settings-overlay').classList.add('open');
+}
+
+function sliderRow(id,label,val,sfx,min,max,step,dotClass){
+  const dot=dotClass?`<span class="tier-dot" style="background:var(--${dotClass.replace('tier-','s')})"></span>`:'';
+  return`<div class="slider-row"><div class="slider-label"><span class="slider-name">${dot}${label}</span><span class="slider-val" id="${id}-val">${val}${sfx}</span></div><input type="range" min="${min}" max="${max}" value="${val}" step="${step}" id="${id}"></div>`;
+}
+
+function wireSliders(c,prog,sfx,pfx,isSFS){
+  const re=()=>{renderContent();updateWeightTotal(c,prog,sfx,pfx,isSFS);};
+  if(isSFS){
+    ['w1','w2','w3','w4'].forEach(id=>{const el=document.getElementById(id+sfx);if(el){el.addEventListener('input',()=>{document.getElementById(id+sfx+'-val').textContent=el.value+'%';re();});}});
+    ['ta','tb','tc'].forEach(id=>{const el=document.getElementById(id+sfx);if(el){el.addEventListener('input',()=>{document.getElementById(id+sfx+'-val').textContent=el.value+(id==='ta'?'+':`–${Math.min(+(document.getElementById((id==='tb'?'ta':'tb')+sfx)||{value:65}).value-1,+el.value)}`);re();});}});
+    ['ct','st','nf'].forEach(id=>{const el=document.getElementById(id+sfx);if(el){el.addEventListener('input',()=>{document.getElementById(id+sfx+'-val').textContent=el.value+(id==='nf'?'':id==='st'?'h':'%');re();});}});
+  } else {
+    ['cw1','cw2'].forEach(id=>{const el=document.getElementById(id+sfx);if(el){el.addEventListener('input',()=>{document.getElementById(id+sfx+'-val').textContent=el.value+'%';re();});}});
+    ['cta','ctb','ctc','cbt'].forEach(id=>{const el=document.getElementById(id+sfx);if(el){el.addEventListener('input',()=>{document.getElementById(id+sfx+'-val').textContent=el.value+(id==='cbt'?'h':id==='cta'?'+':'–');re();});}});
+  }
+}
+
+function updateWeightTotal(c,prog,sfx,pfx,isSFS){
+  if(isSFS){
+    const w1=+(document.getElementById('w1'+sfx)||{value:35}).value;
+    const w2=+(document.getElementById('w2'+sfx)||{value:20}).value;
+    const w3=+(document.getElementById('w3'+sfx)||{value:25}).value;
+    const w4=+(document.getElementById('w4'+sfx)||{value:20}).value;
+    const tot=w1+w2+w3+w4;
+    const el=document.getElementById('wtot'+sfx);
+    if(el){el.textContent='Total: '+tot+'%'+(tot===100?' ✓':' — must reach 100%');el.className='weight-total '+(tot===100?'ok':'bad');}
+  } else {
+    const w1=+(document.getElementById('cw1'+sfx)||{value:70}).value;
+    const w2=+(document.getElementById('cw2'+sfx)||{value:30}).value;
+    const tot=w1+w2;
+    const el=document.getElementById('cwtot'+sfx);
+    if(el){el.textContent='Total: '+tot+'%'+(tot===100?' ✓':' — must reach 100%');el.className='weight-total '+(tot===100?'ok':'bad');}
+  }
+}
+
+async function saveConfig(){
+  const pwd=prompt('Admin password to save settings:');
+  if(pwd!==PWD){alert('Incorrect password.');return;}
+  const c=activeCountry==='future'?'MY':activeCountry;
+  const wks=getWeekLabels();
+  if(!wks.length){alert('Upload at least one week first.');return;}
+  const validFrom=prompt('Apply from which week? (blank = '+wks[wks.length-1]+')')||wks[wks.length-1];
+  const sfx=c==='MY'?'':'-'+c;
+  showSync(true);
+  try{
+    if(activeProg==='sfs'){
+      const w=getSfsWeights(c),t=getTiers(c,'sfs');
+      await dbInsert('sfs_config',[{country:c,valid_from_week:validFrom,w1:w.w1,w2:w.w2,w3:w.w3,w4:w.w4,ta:t.a,tb:t.b,tc:t.c,ct:getClaimedTarget(c),speed_target:getSpeedTarget(c),saved_at:new Date().toISOString()}]);
+    } else {
+      const w=getCncWeights(c);
+      await dbInsert('cnc_config',[{country:c,valid_from_week:validFrom,w1:w.w1,w2:w.w2,bag_target:getBagTarget(c),saved_at:new Date().toISOString()}]);
+    }
+    showToast('Settings saved for '+validFrom,'success');
+  }catch(e){alert('Save failed: '+e.message);}
+  showSync(false);
+}
+
+function closeSettings(){
+  document.getElementById('settings-btn').classList.remove('active');
+  document.getElementById('settings-overlay').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AI SUMMARY
+// ═══════════════════════════════════════════════════════════════
+function openAI(){
+  document.getElementById('ai-btn').classList.add('active');
+  const wks=getWeekLabels();
+  const w=st().selectedWeeks[st().selectedWeeks.length-1]||'';
+  document.getElementById('ai-modal-title').textContent=`✦ AI Summary — ${activeCountry} ${activeProg.toUpperCase()} ${w}`;
+  document.getElementById('ai-body').innerHTML='<div style="color:var(--t2);font-size:11px;padding:8px 0">Select a summary type above to generate.</div>';
+  document.getElementById('ai-meta').textContent='';
+  document.getElementById('ai-copy').style.display='none';
+  document.querySelectorAll('.ai-pbtn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('ai-p-weekly').classList.add('active');
+  aiMode='weekly';aiLastResponse='';
+  document.getElementById('ai-overlay').classList.add('open');
+}
+function closeAI(){document.getElementById('ai-btn').classList.remove('active');document.getElementById('ai-overlay').classList.remove('open');}
+
+function setAiMode(m){
+  aiMode=m;
+  document.querySelectorAll('.ai-pbtn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('ai-p-'+m)?.classList.add('active');
+  runAI();
+}
+
+function buildContext(){
+  const sw=rescoreAll(),wks=getWeekLabels(),s=st();
+  const w=s.selectedWeeks[s.selectedWeeks.length-1];
+  const curr=sw[w]||[];
+  const idx=wks.indexOf(w);const prev=idx>0?sw[wks[idx-1]]||null:null;
+  const st_notes=activeProg==='sfs'?sfsState[activeCountry]:cncState[activeCountry];
+  const lines=curr.slice().sort((a,b)=>a.rank-b.rank).map(st=>{
+    const p=prev?prev.find(x=>x.id===st.id):null;
+    const delta=p?(st.score-p.score).toFixed(1):'N/A';
+    const tier=getTier(activeCountry,activeProg,st.score);
+    const rc=st_notes.rootCauses[st.id]||'';
+    const note=st_notes.notes[st.id]||'';
+    if(activeProg==='sfs')return`#${st.rank} ${st.name} | Score:${st.score.toFixed(0)} (${delta>0?'+':''}${delta}) | Tier:${tier} | Claimed:${st.claimed_pct.toFixed(1)}% | TTC:${st.ttc.toFixed(2)}h | Rel:${st.reliability.toFixed(1)}%${rc?` | RC:${rc}`:''}${note?` | Note:${note.slice(0,60)}`:''}`;
+    else return`#${st.rank} ${st.name} | Score:${st.score.toFixed(0)} (${delta>0?'+':''}${delta}) | Tier:${tier} | TTB:${st.ttb.toFixed(2)}h | Bagged:${st.pct_bagged.toFixed(1)}%${(st.missed_rev||0)>0?` | Missed:${CNC_CCY[activeCountry]} ${Math.round(st.missed_rev)}`:''}${rc?` | RC:${rc}`:''}`;
+  });
+  const avg=curr.reduce((a,s)=>a+s.score,0)/curr.length||0;
+  const header=activeProg==='sfs'?`Programme: SFS | Country: ${activeCountry} | Week: ${w}${prev?` vs ${wks[idx-1]}`:''} | Avg score: ${avg.toFixed(1)} | Stores: ${curr.length} | Tier D: ${curr.filter(s=>getTier(activeCountry,activeProg,s.score)==='D').length} | Below target: ${curr.filter(s=>s.claimed_pct<getClaimedTarget(activeCountry)).length}`:`Programme: C&C | Country: ${activeCountry} | Week: ${w}${prev?` vs ${wks[idx-1]}`:''} | Avg score: ${avg.toFixed(1)} | Stores: ${curr.length} | Total missed rev: ${CNC_CCY[activeCountry]} ${curr.reduce((a,s)=>a+(s.missed_rev||0),0).toFixed(0)}`;
+  return header+'\n\nStore rankings:\n'+lines.join('\n');
+}
+
+const AI_SYSTEM={
+  weekly:'You are a retail ops analyst for JD Sports SEA. Write a 3-4 paragraph weekly summary covering: overall network direction, standout performers, stores of concern, and notable trends. End with one sentence on what to watch next week. Be concise, direct, use plain English. Reference store names and specific numbers.',
+  actions:'List only the stores requiring action this week. For each: store name, issue (one line), recommended action (one line). Focus on Tier C/D stores and any with missed revenue or below target. Be brief.',
+  movers:'Focus on movement and trends in 2-3 paragraphs. Which stores improved most and why? Which declined? Are there patterns — groups of stores, regional effects? Reference their KPIs.',
+  email:'Write a short stakeholder email (4-6 sentences) for a regional manager. Lead with the headline metric, note 1-2 highlights, flag urgent concerns, end with a forward-looking sentence. Professional but direct tone. No subject line.'
+};
+
+async function runAI(){
+  if(aiLoading)return;
+  const wks=getWeekLabels();
+  if(!wks.length){document.getElementById('ai-body').innerHTML='<div style="color:var(--t2);font-size:11px">No data loaded yet.</div>';return;}
+  aiLoading=true;
+  document.getElementById('ai-body').innerHTML='<div class="ai-loading"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div><span style="margin-left:8px">Generating summary...</span></div>';
+  document.getElementById('ai-meta').textContent='';
+  document.getElementById('ai-copy').style.display='none';
+  try{
+    const t0=Date.now();
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:AI_SYSTEM[aiMode]||AI_SYSTEM.weekly,messages:[{role:'user',content:'Performance data:\n\n'+buildContext()+'\n\nGenerate the summary.'}]})});
+    const data=await resp.json();
+    const elapsed=((Date.now()-t0)/1000).toFixed(1);
+    if(data.content?.[0]?.text){
+      aiLastResponse=data.content[0].text;
+      const div=document.createElement('div');div.className='ai-response';div.textContent=aiLastResponse;
+      document.getElementById('ai-body').innerHTML='';document.getElementById('ai-body').appendChild(div);
+      document.getElementById('ai-meta').textContent=`Generated in ${elapsed}s · ${data.usage?.output_tokens||'?'} tokens`;
+      document.getElementById('ai-copy').style.display='inline-block';
+    } else {
+      document.getElementById('ai-body').innerHTML=`<div style="color:var(--red);font-size:11px">Error: ${data.error?.message||'Unexpected response'}</div>`;
+    }
+  }catch(e){document.getElementById('ai-body').innerHTML=`<div style="color:var(--red);font-size:11px">Request failed: ${e.message}</div>`;}
+  aiLoading=false;
+}
+
+function copyAI(){
+  if(!aiLastResponse)return;
+  navigator.clipboard.writeText(aiLastResponse).then(()=>{
+    const b=document.getElementById('ai-copy');b.textContent='✓ Copied!';
+    setTimeout(()=>b.textContent='✓ Copy',2000);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN RENDER
+// ═══════════════════════════════════════════════════════════════
+function renderAll(){
+  renderWeekBar();
+  renderContent();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════════
+function showToast(msg,type='info'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast '+type+' show';
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+syncAll();
+</script>
+</body>
+</html>
